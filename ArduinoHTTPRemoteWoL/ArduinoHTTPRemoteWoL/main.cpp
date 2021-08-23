@@ -1,59 +1,53 @@
 ﻿#include <SPI.h>
 #include <Ethernet.h>
 
-#define ENABLE_SERIAL
+#include "WoL.h"
 
-byte deviceMacAddress[] = {
-  0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
-};
+byte deviceMacAddress[] = {0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED};
+byte woLaddressesList[][6] = {{ 0x18, 0xC0, 0x4D, 0x85, 0x10, 0x2F }};
+byte broadcastAddress[] = { 10, 10, 0, 255 };
 IPAddress ip(10, 10, 0, 10);
+
+WoLHandler* wol;
 
 EthernetServer server(80);
 
 void setup() {
-	#ifdef ENABLE_SERIAL
-		Serial.begin(9600);
-		while (!Serial) {}
-		Serial.println("Ethernet WebServer OwO Example");
-	#endif // ENABLE_SERIAL
-
+	pinMode(9, OUTPUT);
+	
 	Ethernet.begin(deviceMacAddress, ip);
+	
 	if (Ethernet.hardwareStatus() == EthernetNoHardware) {
-		#ifdef ENABLE_SERIAL
-			Serial.println("Ethernet shield was not found.  Sorry, can't run without hardware. :(");
-		#endif // ENABLE_SERIAL
 		while (true) {
-			delay(1);
+			digitalWrite(9, HIGH);
 		}
 	}
-	if (Ethernet.linkStatus() == LinkOFF) {
-		#ifdef ENABLE_SERIAL
-			Serial.println("Ethernet cable is not connected.");
-		#endif // ENABLE_SERIAL
+	boolean statusLedState = false;
+	while(Ethernet.linkStatus() == LinkOFF) {
+		if (!statusLedState) {
+			digitalWrite(9, HIGH);
+			statusLedState = true;
+			delay(500);
+			} else {
+			digitalWrite(9, LOW);
+			statusLedState = false;
+			delay(500);
+		}
 	}
-
+	digitalWrite(9, LOW);
+	
+	wol = initWoLHandler(broadcastAddress, woLaddressesList[0]);
 	server.begin();
-	#ifdef ENABLE_SERIAL
-		Serial.print("server is at ");
-		Serial.println(Ethernet.localIP());
-	#endif // ENABLE_SERIAL
 }
 
 
 void loop() {
 	EthernetClient client = server.available();
 	if (client) {
-		#ifdef ENABLE_SERIAL
-			Serial.println("new client");
-		#endif // ENABLE_SERIAL
-		
 		boolean currentLineIsBlank = true;
 		while (client.connected()) {
 		if (client.available()) {
 			char c = client.read();
-			#ifdef ENABLE_SERIAL
-				Serial.write(c);
-			#endif // ENABLE_SERIAL
 			// if you've gotten to the end of the line (received a newline
 			// character) and the line is blank, the http request has ended,
 			// so you can send a reply
@@ -62,7 +56,6 @@ void loop() {
 				client.println("HTTP/1.1 200 OK");
 				client.println("Content-Type: text/html");
 				client.println("Connection: close");  // the connection will be closed after completion of the response
-				client.println("Refresh: 5");  // refresh the page automatically every 5 sec
 				client.println();
 				client.println("<!DOCTYPE HTML>");
 				client.println("<html>");
@@ -91,8 +84,6 @@ void loop() {
 		delay(1);
 		// close the connection:
 		client.stop();
-		#ifdef ENABLE_SERIAL
-			Serial.println("client disconnected");
-		#endif // ENABLE_SERIAL
+		sendMagicPacket(*wol);
 	}
 }
