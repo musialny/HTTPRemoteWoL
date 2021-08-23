@@ -13,8 +13,8 @@
     <ArduinoProjectType>Sketch</ArduinoProjectType>
     <OutputFileExtension>.elf</OutputFileExtension>
     <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
-    <Name>ArduinoHTTPRemoteWoL</Name>
-    <RootNamespace>ArduinoHTTPRemoteWoL</RootNamespace>
+    <Name>HTTPRemoteWoL</Name>
+    <RootNamespace>HTTPRemoteWoL</RootNamespace>
     <ArduinoIdeDir>C:\Program Files (x86)\Arduino</ArduinoIdeDir>
     <ToolchainFlavour>Native</ToolchainFlavour>
     <KeepTimersRunning>true</KeepTimersRunning>
@@ -27,20 +27,20 @@
     <OverrideVtorValue />
     <BootSegment>2</BootSegment>
     <eraseonlaunchrule>1</eraseonlaunchrule>
-    <AssemblyName>ArduinoHTTPRemoteWoL</AssemblyName>
+    <AssemblyName>HTTPRemoteWoL</AssemblyName>
     <ResetRule>0</ResetRule>
     <EraseKey />
     <AsfFrameworkConfig>
       <framework-data xmlns="">
-        <options />
-        <configurations />
-        <files />
-        <documentation help="" />
-        <offline-documentation help="" />
-        <dependencies>
-          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.49.1" />
-        </dependencies>
-      </framework-data>
+  <options />
+  <configurations />
+  <files />
+  <documentation help="" />
+  <offline-documentation help="" />
+  <dependencies>
+    <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.49.1" />
+  </dependencies>
+</framework-data>
     </AsfFrameworkConfig>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
@@ -216,6 +216,17 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="readme.html">
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ArduinoCore\ArduinoCore.cppproj">
+      <Name>ArduinoCore</Name>
+      <Project>d28192dd-16dd-464d-b476-1fb0909809ac</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="HTTPServer.cpp">
       <SubType>compile</SubType>
     </Compile>
@@ -282,15 +293,6 @@
     <Compile Include="WoL.h">
       <SubType>compile</SubType>
     </Compile>
-    <Content Include="readme.html">
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\ArduinoCore\ArduinoCore.cppproj">
-      <Name>ArduinoCore</Name>
-      <Project>14bf3851-4e75-4e58-a153-57a22b1afa52</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="include\" />

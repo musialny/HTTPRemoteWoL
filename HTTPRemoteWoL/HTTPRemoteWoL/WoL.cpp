@@ -25,7 +25,7 @@ void sendMagicPacket(WoLHandler& woLHandler, const byte* const remote_MAC_ADD)
 	for (i = 0; i < 6; i++) magicPacket[i] = 0xFF;
 	for (i = 0; i < 16; i++) for (o = 0; o < 6; o++) magicPacket[magicPacketIterator++] = remote_MAC_ADD[o];
 	
-	woLHandler.udp.beginPacket( woLHandler.broadCastIp, wolPort);
+	woLHandler.udp.beginPacket(woLHandler.broadCastIp, wolPort);
 	woLHandler.udp.write(magicPacket, sizeof magicPacket);
 	woLHandler.udp.endPacket();
 }

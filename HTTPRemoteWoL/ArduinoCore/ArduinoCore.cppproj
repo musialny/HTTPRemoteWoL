@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectVersion>7.0</ProjectVersion>
     <ToolchainName>com.Atmel.AVRGCC8.CPP</ToolchainName>
-    <ProjectGuid>14bf3851-4e75-4e58-a153-57a22b1afa52</ProjectGuid>
+    <ProjectGuid>d28192dd-16dd-464d-b476-1fb0909809ac</ProjectGuid>
     <avrdevice>atmega328p</avrdevice>
     <avrdeviceseries>none</avrdeviceseries>
     <OutputType>StaticLibrary</OutputType>

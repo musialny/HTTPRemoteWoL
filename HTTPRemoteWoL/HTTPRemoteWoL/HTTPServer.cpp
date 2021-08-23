@@ -54,6 +54,10 @@ void HTTPServer::listen(void (*middleware)()) {
 				client.println();
 				client.println("<!DOCTYPE HTML>");
 				client.println("<html>");
+				client.println("<head>");
+				client.println("<title> HTTPServer </title>");
+				client.println("</head>");
+				client.println("<body>");
 				for (int analogChannel = 0; analogChannel < 6; analogChannel++) {
 					int sensorReading = analogRead(analogChannel);
 					client.print("analog input ");
@@ -62,6 +66,7 @@ void HTTPServer::listen(void (*middleware)()) {
 					client.print(sensorReading);
 					client.println("<br />");
 				}
+				client.println("</body>");
 				client.println("</html>");
 				break;
 			}

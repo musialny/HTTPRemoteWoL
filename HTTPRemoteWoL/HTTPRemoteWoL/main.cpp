@@ -1,4 +1,5 @@
-﻿#include <SPI.h>
+﻿#include <Arduino.h>
+#include <SPI.h>
 #include <Ethernet.h>
 #include "WoL.h"
 #include "HTTPServer.h"
