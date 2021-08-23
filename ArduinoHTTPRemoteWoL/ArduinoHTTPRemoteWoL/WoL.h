@@ -14,11 +14,10 @@
 struct WoLHandler {
 	EthernetUDP udp;
 	byte* broadCastIp;
-	byte* remote_MAC_ADD;
 };
 
-WoLHandler* initWoLHandler(byte* broadCastIp, byte* remote_MAC_ADD);
-void sendMagicPacket(WoLHandler& woLHandler);
+WoLHandler* initWoLHandler(const byte* const broadCastIp);
+void sendMagicPacket(WoLHandler& woLHandler, const byte* const remote_MAC_ADD);
 
 
 #endif /* WOL_H_ */

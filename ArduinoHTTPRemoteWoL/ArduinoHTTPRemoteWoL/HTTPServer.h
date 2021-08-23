@@ -9,8 +9,20 @@
 #ifndef HTTPSERVER_H_
 #define HTTPSERVER_H_
 
+#include <SPI.h>
+#include <Ethernet.h>
 
-
+class HTTPServer
+{
+private:
+	String (*middlewares[])(String request);
+	EthernetServer* server;
+public:
+	HTTPServer(byte* deviceMacAddress, IPAddress* ip, int port = 80);
+	~HTTPServer();
+	
+	void listen(void (*middleware)());
+};
 
 
 #endif /* HTTPSERVER_H_ */

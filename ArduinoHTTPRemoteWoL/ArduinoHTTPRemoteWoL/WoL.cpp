@@ -7,38 +7,25 @@
 
 #include "WoL.h"
 
-WoLHandler* initWoLHandler(byte* broadCastIp, byte* remote_MAC_ADD) {
+WoLHandler* initWoLHandler(const byte* const broadCastIp) {
 	auto woLHandler = new WoLHandler;
 	woLHandler->udp.begin(7);
-	woLHandler->broadCastIp = broadCastIp;
-	woLHandler->remote_MAC_ADD = remote_MAC_ADD;
+	woLHandler->broadCastIp = const_cast<byte*>(broadCastIp);
 	return woLHandler;
 }
 
-void sendMagicPacket(WoLHandler& woLHandler)
+void sendMagicPacket(WoLHandler& woLHandler, const byte* const remote_MAC_ADD)
 {
 	int wolPort = 9;
-	
 	byte magicPacket[102];
-	int Ciclo = 0, CicloMacAdd = 0, IndiceArray = 0;
 	
-	for( Ciclo = 0; Ciclo < 6; Ciclo++)
-	{
-		magicPacket[IndiceArray] = 0xFF;
-		IndiceArray++;
-	}
-	
-	for( Ciclo = 0; Ciclo < 16; Ciclo++ )
-	{
-		for( CicloMacAdd = 0; CicloMacAdd < 6; CicloMacAdd++)
-		{
-			magicPacket[IndiceArray] = woLHandler.remote_MAC_ADD[CicloMacAdd];
-			IndiceArray++;
-		}
-	}
+	int i = 0;
+	int o = 0;
+	int magicPacketIterator = 6;
+	for (i = 0; i < 6; i++) magicPacket[i] = 0xFF;
+	for (i = 0; i < 16; i++) for (o = 0; o < 6; o++) magicPacket[magicPacketIterator++] = remote_MAC_ADD[o];
 	
 	woLHandler.udp.beginPacket( woLHandler.broadCastIp, wolPort);
 	woLHandler.udp.write(magicPacket, sizeof magicPacket);
 	woLHandler.udp.endPacket();
-
 }
