@@ -5,11 +5,11 @@
  *  Author: musialny
  */ 
 
-#include <SPI.h>
-#include <Ethernet.h>
-
 #ifndef WOL_H_
 #define WOL_H_
+
+#include <SPI.h>
+#include <Ethernet.h>
 
 struct WoLHandler {
 	EthernetUDP udp;
