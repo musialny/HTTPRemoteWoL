@@ -80,7 +80,7 @@ void HTTPServer::listen(void (*middleware)()) {
 	EthernetClient client = server->available();
 	if (client) {
 		boolean currentLineIsBlank = true;
-		String rawRequest("");
+		auto rawRequest = new String("");
 		while (client.connected()) {
 			if (client.available()) {
 				/*Serial.print(static_cast<char>(client.read()));
@@ -88,10 +88,13 @@ void HTTPServer::listen(void (*middleware)()) {
 				char c = client.read();
 				if (c == '\n' && currentLineIsBlank) {
 					String splitter('\n');
-					auto parsedRequest = split(rawRequest, splitter);
+					auto parsedRequest = split(*rawRequest, splitter);
+					delete rawRequest;
 					auto url = new String("/");
 					HTTPRequest request(url, parsedRequest->strings, parsedRequest->amount, url /*placeholder parameter*/, false);
 					HTTPResponse* response = this->middlewares[0].middleware(request);
+					delete parsedRequest;
+					delete url;
 					client.println("HTTP/1.1 " + String(response->statusCode) + " OK");
 					for (int i = 0; i < response->headersCount; i++)
 						client.println(response->headers[i].c_str());
@@ -99,12 +102,10 @@ void HTTPServer::listen(void (*middleware)()) {
 					client.println("Connection: close");
 					client.println();
 					client.println(response->body->c_str());
-					delete parsedRequest;
-					delete url;
 					delete response;
 					break;
 				}
-				rawRequest += c;
+				*rawRequest += c;
 				if (c == '\n') currentLineIsBlank = true;
 				else if (c != '\r') currentLineIsBlank = false;
 			}
