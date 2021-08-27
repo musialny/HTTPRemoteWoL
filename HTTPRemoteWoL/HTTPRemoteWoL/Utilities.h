@@ -22,6 +22,7 @@ namespace Utilities {
 
 	ElasticArray<int>* findAll(const String& value, const String& findingValue);
 	SplittedString* split(const String& value, const String& splitter);
+	SplittedString* split(const String& value, int maxArraySize);
 }
 
 #endif /* UTILITIES_H_ */

@@ -6,6 +6,7 @@
  */ 
 
 #include "Utilities.h"
+#include <Arduino.h>
 
 Utilities::SplittedString::SplittedString() {
 	this->amount = 0;
@@ -49,5 +50,17 @@ Utilities::SplittedString* Utilities::split(const String& value, const String& s
 		}
 	}
 	delete splitPoints;
+	return result;
+}
+
+Utilities::SplittedString* Utilities::split(const String& value, int maxStringSize) {
+	auto result = new Utilities::SplittedString;
+	result->amount = value.length() / maxStringSize + (value.length() % maxStringSize ? 1 : 0);
+	result->strings = new String[result->amount];
+	int resultAmountCounter = 0;
+	for (int i = 0; i < value.length(); i++) {
+		if (i == maxStringSize * (resultAmountCounter + 1)) resultAmountCounter++;
+		result->strings[resultAmountCounter] += value.charAt(i);
+	}
 	return result;
 }

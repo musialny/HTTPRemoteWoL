@@ -18,6 +18,7 @@ enum class HTTPMethods {
 };
 
 struct HTTPHeaders {
+	String host;
 	String contentType;
 };
 
@@ -60,7 +61,7 @@ public:
 	~HTTPServer();
 	
 	void use(HttpMiddleware* middlewares);
-	void listen(void (*middleware)());
+	void listen();
 };
 
 #endif /* HTTPSERVER_H_ */

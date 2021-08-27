@@ -14,5 +14,4 @@ namespace Middlewares {
 	HttpMiddleware* getMiddlewares();
 }
 
-
 #endif /* MIDDLEWARES_H_ */
