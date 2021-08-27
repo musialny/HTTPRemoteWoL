@@ -7,18 +7,16 @@
 
 #include "Utilities.h"
 
-#include <Arduino.h>
-
-SplittedString::SplittedString() {
+Utilities::SplittedString::SplittedString() {
 	this->amount = 0;
 	this->strings = nullptr;
 }
 
-SplittedString::~SplittedString() {
+Utilities::SplittedString::~SplittedString() {
 	delete[] this->strings;
 }
 
-ElasticArray<int>* findAll(const String& value, const String& findingValue) {
+ElasticArray<int>* Utilities::findAll(const String& value, const String& findingValue) {
 	auto result = new ElasticArray<int>;
 	for (int i = 0; i < value.length(); i++) {
 		int subIndex = i;
@@ -34,8 +32,8 @@ ElasticArray<int>* findAll(const String& value, const String& findingValue) {
 	return result;
 }
 
-SplittedString* split(const String& value, const String& splitter) {
-	auto result = new SplittedString;
+Utilities::SplittedString* Utilities::split(const String& value, const String& splitter) {
+	auto result = new Utilities::SplittedString;
 	auto splitPoints = findAll(value, splitter);
 	if (splitPoints->length()) {
 		result->amount = splitPoints->length() + 1;

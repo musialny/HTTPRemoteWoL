@@ -37,6 +37,7 @@ public:
 			this->arrayLength = arrayLength;
 			this->array[this->stackPointer++] = value;
 		} else this->array[this->stackPointer++] = value;
+		return *this;
 	}
 	
 	const T& operator[](int index) const {

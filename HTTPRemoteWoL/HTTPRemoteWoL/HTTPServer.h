@@ -3,8 +3,7 @@
  *
  * Created: 8/23/2021 12:45:38 AM
  *  Author: musialny
- */ 
-
+ */
 
 #ifndef HTTPSERVER_H_
 #define HTTPSERVER_H_
@@ -18,12 +17,16 @@ enum class HTTPMethods {
 	DELETE
 };
 
+struct HTTPHeaders {
+	String contentType;
+};
+
 struct HTTPRequest {
 	String* url;
-	String* headers;
-	int headersCount;
+	HTTPMethods method;
+	HTTPHeaders* headers;
 	String* body;
-	HTTPRequest(String* url = nullptr, String* headers = nullptr, int headersCount = 0, String* body = nullptr, bool deleteBody = true);
+	HTTPRequest(String* url = nullptr, HTTPMethods method = HTTPMethods::GET, HTTPHeaders* headers = nullptr, String* body = nullptr, bool deleteBody = true);
 	~HTTPRequest();
 private:
 	bool deleteBody;
@@ -51,14 +54,13 @@ class HTTPServer
 private:
 	HttpMiddleware* middlewares;
 	EthernetServer* server;
+	
 public:
 	HTTPServer(byte* deviceMacAddress, IPAddress* ip, int port = 80);
 	~HTTPServer();
 	
 	void use(HttpMiddleware* middlewares);
-	
 	void listen(void (*middleware)());
 };
-
 
 #endif /* HTTPSERVER_H_ */

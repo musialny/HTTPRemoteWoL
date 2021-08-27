@@ -10,10 +10,10 @@
 
 constexpr int STATUS_PIN = 9;
 
-HTTPRequest::HTTPRequest(String* url, String* headers, int headersCount, String* body, bool deleteBody) {
+HTTPRequest::HTTPRequest(String* url, HTTPMethods method, HTTPHeaders* headers, String* body, bool deleteBody) {
 	this->url = url;
+	this->method = method;
 	this->headers = headers;
-	this->headersCount = headersCount;
 	this->body = body;
 	this->deleteBody = deleteBody;
 }
@@ -76,38 +76,89 @@ void HTTPServer::use(HttpMiddleware* middlewares) {
 	this->middlewares = middlewares;
 }
 
+struct Metadata {
+	String url;
+	HTTPMethods method;
+};
+Metadata* parseMetadata(const Utilities::SplittedString& splittedString) {
+	auto splitter = new String(" ");
+	auto split = Utilities::split(splittedString.strings[0], *splitter);
+	delete splitter;
+	auto result = new Metadata;
+	if (split->strings[0] == String("GET")) result->method = HTTPMethods::GET;
+	else if (split->strings[0] == String("POST")) result->method = HTTPMethods::POST;
+	else if (split->strings[0] == String("DELETE")) result->method = HTTPMethods::DELETE;
+	result->url = split->strings[1];
+	delete split;
+	return result;
+}
+
+HTTPHeaders* parseHeaders(const Utilities::SplittedString& splittedString) {
+	auto result = new HTTPHeaders;
+	String splitter(" ");
+	constexpr int _headers = sizeof(HTTPHeaders) / sizeof(String);
+	String** headers = new String*[1] {new String[2]{"Content-Type", "content-type"}};
+	for (int i = 0; i < splittedString.amount; i++) {
+		if (splittedString.strings[i].length() == 1 && splittedString.strings[i] == String("\n")) break;
+		for (int o = 0; o < _headers; o++) {
+			int isBreaked = false;
+			for (int p = 0; p < 2; p++) {
+				auto findResult = Utilities::findAll(splittedString.strings[i], headers[o][p]);
+				if (findResult->length()) {
+					auto res = Utilities::split(splittedString.strings[i], splitter);
+					if (o == 0) result->contentType = res->strings[1];
+					delete res;
+					isBreaked = true;
+					break;
+				}
+				delete findResult;
+			}
+			if(isBreaked) break;
+		}
+	}
+	for (int i = 0; i < splittedString.amount; i++) {
+		delete[] headers[i];
+	}
+	delete[] headers;
+	return result;
+}
+
+String* parseBody(const Utilities::SplittedString& splittedString) {
+	auto result = new String;
+	return result;
+}
+
 void HTTPServer::listen(void (*middleware)()) {
 	EthernetClient client = server->available();
 	if (client) {
-		boolean currentLineIsBlank = true;
 		auto rawRequest = new String("");
 		while (client.connected()) {
-			if (client.available()) {
-				/*Serial.print(static_cast<char>(client.read()));
-				char c = '';*/
-				char c = client.read();
-				if (c == '\n' && currentLineIsBlank) {
-					String splitter('\n');
-					auto parsedRequest = split(*rawRequest, splitter);
-					delete rawRequest;
-					auto url = new String("/");
-					HTTPRequest request(url, parsedRequest->strings, parsedRequest->amount, url /*placeholder parameter*/, false);
-					HTTPResponse* response = this->middlewares[0].middleware(request);
-					delete parsedRequest;
-					delete url;
-					client.println("HTTP/1.1 " + String(response->statusCode) + " OK");
-					for (int i = 0; i < response->headersCount; i++)
-						client.println(response->headers[i].c_str());
-					client.println("X-Powered-By: musialny.dev");
-					client.println("Connection: close");
-					client.println();
-					client.println(response->body->c_str());
-					delete response;
-					break;
-				}
-				*rawRequest += c;
-				if (c == '\n') currentLineIsBlank = true;
-				else if (c != '\r') currentLineIsBlank = false;
+			if (client.available()) *rawRequest += static_cast<char>(client.read());
+			else {
+				auto splitter = new String('\n');
+				auto parsedRequest = Utilities::split(*rawRequest, *splitter);
+				delete rawRequest;
+				delete splitter;
+				auto metadata = parseMetadata(*parsedRequest);
+				// auto headers = parseHeaders(*parsedRequest);
+				HTTPHeaders* headers = new HTTPHeaders;
+				// auto body = parseBody(*parsedRequest);
+				auto body = new String;
+				delete parsedRequest;
+				HTTPRequest request(&metadata->url, metadata->method, headers, body, false);
+				HTTPResponse* response = this->middlewares[0].middleware(request);
+				delete metadata;
+				delete headers;
+				delete body;
+				client.println("HTTP/1.0 " + String(response->statusCode) + " OK");
+				for (int i = 0; i < response->headersCount; i++)
+					client.println(response->headers[i].c_str());
+				client.println("X-Powered-By: musialny.dev");
+				client.println("Connection: close");
+				client.println();
+				client.println(response->body->c_str());
+				delete response;
+				break;
 			}
 		}
 		delay(1);

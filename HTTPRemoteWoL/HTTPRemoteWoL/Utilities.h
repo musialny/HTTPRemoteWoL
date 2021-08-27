@@ -12,14 +12,16 @@
 #include "WString.h"
 #include "ElasticArray.h"
 
-struct SplittedString {
-	int amount;
-	String* strings;
-	SplittedString();
-	~SplittedString();
-};
+namespace Utilities {
+	struct SplittedString {
+		int amount;
+		String* strings;
+		SplittedString();
+		~SplittedString();
+	};
 
-ElasticArray<int>* findAll(const String& value, const String& findingValue);
-SplittedString* split(const String& value, const String& splitter);
+	ElasticArray<int>* findAll(const String& value, const String& findingValue);
+	SplittedString* split(const String& value, const String& splitter);
+}
 
 #endif /* UTILITIES_H_ */
