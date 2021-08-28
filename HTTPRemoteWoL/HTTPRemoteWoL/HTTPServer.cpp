@@ -93,10 +93,10 @@ Metadata* parseMetadata(const Utilities::SplittedString& splittedString) {
 	return result;
 }
 
-HTTPHeaders* parseHeaders(const Utilities::SplittedString& splittedString) {
+HTTPHeaders* parseHeaders(const EthernetClient& client, const Utilities::SplittedString& splittedString) {
 	auto result = new HTTPHeaders;
 	String splitter(" ");
-	constexpr int _headers = sizeof(HTTPHeaders) / sizeof(String);
+	constexpr int _headers = (sizeof(HTTPHeaders) - sizeof(IPAddress)) / sizeof(String);
 	String headers[2][2] = {{"Host", "host"}, {"Content-Type", "content-type"}};
 	for (int i = 0; i < splittedString.amount; i++) {
 		if (splittedString.strings[i].length() == 1 && splittedString.strings[i] == String("\n")) break;
@@ -117,6 +117,7 @@ HTTPHeaders* parseHeaders(const Utilities::SplittedString& splittedString) {
 			if (isBreaked) break;
 		}
 	}
+	result->ip = const_cast<EthernetClient*>(&client)->remoteIP();
 	return result;
 }
 
@@ -126,7 +127,7 @@ String* parseBody(const Utilities::SplittedString& splittedString) {
 }
 
 void HTTPServer::listen() {
-	EthernetClient client = server->available();
+	auto client = server->available();
 	if (client) {
 		auto rawRequest = new String("");
 		while (client.connected()) {
@@ -141,7 +142,7 @@ void HTTPServer::listen() {
 					if (buffer == '\r' || buffer == '\0') parsedRequest->strings[i].remove(parsedRequest->strings[i].length() - 1, 1);
 				}
 				auto metadata = parseMetadata(*parsedRequest);
-				auto headers = parseHeaders(*parsedRequest);
+				auto headers = parseHeaders(client, *parsedRequest);
 				auto body = parseBody(*parsedRequest);
 				delete parsedRequest;
 				HTTPRequest request(&metadata->url, metadata->method, headers, body, false);

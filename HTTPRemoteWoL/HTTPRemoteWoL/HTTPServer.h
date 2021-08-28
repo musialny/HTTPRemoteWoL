@@ -20,6 +20,7 @@ enum class HTTPMethods {
 struct HTTPHeaders {
 	String host;
 	String contentType;
+	IPAddress ip;
 };
 
 struct HTTPRequest {

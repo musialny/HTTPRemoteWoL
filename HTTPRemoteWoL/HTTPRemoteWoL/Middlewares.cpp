@@ -28,10 +28,16 @@ HttpMiddleware* Middlewares::getMiddlewares() {
 		*resultBody += "<h3>Content-Type: ";
 		*resultBody += request.headers->contentType;
 		*resultBody += "</h3>";
-		*resultBody += "<h3>Host: ";
+		*resultBody += "<h4>Host: ";
 		*resultBody += request.headers->host;
 		*resultBody += "</h4>";
-		*resultBody += "<h3>Body: ";
+		*resultBody += "<h4>Client IP: ";
+		for (int i = 0; i < 4; i++) {
+			*resultBody += String(request.headers->ip[i]);
+			if (i < 3) *resultBody += ".";
+		}
+		*resultBody += "</h4>";
+		*resultBody += "<h4>Body: ";
 		*resultBody += *request.body;
 		*resultBody += "</h4>";
 		*resultBody += "</body></html>";
