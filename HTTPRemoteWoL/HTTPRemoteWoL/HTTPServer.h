@@ -13,6 +13,7 @@
 #include "ElasticArray.h"
 
 enum class HTTPMethods {
+	ALL = -1,
 	GET,
 	POST,
 	DELETE
@@ -34,7 +35,8 @@ struct HTTPRequest {
 	HTTPMethods method;
 	HTTPHeaders* headers;
 	String* body;
-	HTTPRequest(String* url = nullptr, HTTPMethods method = HTTPMethods::GET, HTTPHeaders* headers = nullptr, String* body = nullptr, bool deleteBody = true);
+	void* data;
+	HTTPRequest(String* url = nullptr, HTTPMethods method = HTTPMethods::GET, HTTPHeaders* headers = nullptr, String* body = nullptr, void* data = nullptr, bool deleteBody = true);
 	~HTTPRequest();
 private:
 	bool deleteBody;
@@ -54,7 +56,7 @@ private:
 struct HttpMiddleware {
 	HTTPMethods method;
 	String url;
-	HTTPResponse* (*middleware)(const HTTPRequest& request);
+	HTTPResponse* (*middleware)(HTTPRequest& request);
 };
 
 class HTTPServer

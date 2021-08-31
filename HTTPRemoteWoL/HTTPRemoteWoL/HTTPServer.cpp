@@ -10,11 +10,12 @@
 
 constexpr int STATUS_PIN = 9;
 
-HTTPRequest::HTTPRequest(String* url, HTTPMethods method, HTTPHeaders* headers, String* body, bool deleteBody) {
+HTTPRequest::HTTPRequest(String* url, HTTPMethods method, HTTPHeaders* headers, String* body, void* data, bool deleteBody) {
 	this->url = url;
 	this->method = method;
 	this->headers = headers;
 	this->body = body;
+	this->data = data;
 	this->deleteBody = deleteBody;
 }
 
@@ -23,6 +24,7 @@ HTTPRequest::~HTTPRequest() {
 		delete this->url;
 		delete[] this->headers;
 		delete this->body;
+		delete this->data;
 	}
 }
 
@@ -92,20 +94,20 @@ Metadata* parseMetadata(const Utilities::SplittedString& splittedString) {
 
 HTTPHeaders* parseHeaders(const EthernetClient& client, const Utilities::SplittedString& splittedString) {
 	auto result = new HTTPHeaders;
-	String splitter(" ");
+	String splitter(' ');
 	constexpr int _headers = (sizeof(HTTPHeaders) - sizeof(IPAddress)) / sizeof(String);
 	String headers[2][2] = {{"Host", "host"}, {"Content-Type", "content-type"}};
 	for (int i = 0; i < splittedString.amount; i++) {
-		if (splittedString.strings[i].length() == 1 && splittedString.strings[i] == String("\n")) break;
+		if (splittedString.strings[i].length() == 1 && splittedString.strings[i] == String('\n')) break;
 		for (int o = 0; o < _headers; o++) {
 			int isBreaked = false;
 			for (int p = 0; p < 2; p++) {
 				auto findResult = Utilities::findAll(splittedString.strings[i], headers[o][p]);
 				if (findResult->length()) {
+					delete findResult;
 					auto res = Utilities::split(splittedString.strings[i], splitter);
 					reinterpret_cast<String*>(result)[o] = res->strings[1];
 					delete res;
-					delete findResult;
 					isBreaked = true;
 					break;
 				}
@@ -126,7 +128,7 @@ String* parseBody(const Utilities::SplittedString& splittedString) {
 void HTTPServer::listen() {
 	auto client = server->available();
 	if (client) {
-		auto rawRequest = new String("");
+		auto rawRequest = new String;
 		while (client.connected()) {
 			if (client.available()) *rawRequest += static_cast<char>(client.read());
 			else {
@@ -142,14 +144,18 @@ void HTTPServer::listen() {
 				auto headers = parseHeaders(client, *parsedRequest);
 				auto body = parseBody(*parsedRequest);
 				delete parsedRequest;
-				HTTPRequest request(&metadata->url, metadata->method, headers, body, false);
+				Serial.println(String("headers->contentType[" + String(headers->contentType.length()) + "] -> " + headers->contentType));
+				HTTPRequest request(&metadata->url, metadata->method, headers, body, nullptr, false);
 				HTTPResponse* response = nullptr;
-				Serial.println(this->middlewares->length());
 				for (int i = 0; i < this->middlewares->length(); i++) {
-					if ((*this->middlewares)[i]->method == metadata->method) {
-						if ((*this->middlewares)[i]->url == metadata->url) {
+					if ((*this->middlewares)[i]->method == metadata->method || (*this->middlewares)[i]->method == HTTPMethods::ALL) {
+						if ((*this->middlewares)[i]->url == metadata->url || (*this->middlewares)[i]->url == String("*")) {
 							response = (*this->middlewares)[i]->middleware(request);
-							break;
+							if (response == nullptr) continue;
+							else {
+								delete request.data;
+								break;
+							}
 						}
 					}
 				}

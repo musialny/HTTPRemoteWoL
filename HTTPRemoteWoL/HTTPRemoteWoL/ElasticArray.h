@@ -5,7 +5,6 @@
 * Author: musialny
 */
 
-
 #ifndef __ELASTICARRAY_H__
 #define __ELASTICARRAY_H__
 

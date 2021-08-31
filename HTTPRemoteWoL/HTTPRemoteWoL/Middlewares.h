@@ -11,6 +11,7 @@
 #include "HTTPServer.h"	
 
 namespace Middlewares {
+	HttpMiddleware* auth();
 	HttpMiddleware* homePage();
 	HttpMiddleware* subPage();
 }
