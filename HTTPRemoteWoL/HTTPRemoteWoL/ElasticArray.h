@@ -12,7 +12,8 @@
 template<typename T>
 class ElasticArray
 {
-private:
+// private:
+public:
 	T* array;
 	int arrayLength;
 	int stackPointer;
@@ -28,7 +29,8 @@ public:
 	
 	ElasticArray& push(T value) {
 		if (this->arrayLength - 1 < this->stackPointer) {
-			int arrayLength = this->arrayLength ? this->arrayLength * 2 : 1;
+			int arrayLength = this->arrayLength + 1; //Smallest allocation for better memory usage
+			// int arrayLength = this->arrayLength * 2;
 			T* newArray = new T[arrayLength];
 			for (int i = 0; i < this->arrayLength; i++)
 				newArray[i] = this->array[i];

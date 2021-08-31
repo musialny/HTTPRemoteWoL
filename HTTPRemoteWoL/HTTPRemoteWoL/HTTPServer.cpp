@@ -3,7 +3,7 @@
  *
  * Created: 8/23/2021 12:44:59 AM
  *  Author: musialny
- */ 
+ */
 
 #include "HTTPServer.h"
 #include "Utilities.h"
@@ -42,9 +42,9 @@ HTTPResponse::~HTTPResponse() {
 }
 
 HTTPServer::HTTPServer(byte* deviceMacAddress, IPAddress* ip, int port) {
+	this->middlewares = new ElasticArray<const HttpMiddleware*>;
 	this->server = new EthernetServer(port);
 	Ethernet.begin(deviceMacAddress, *ip);
-	
 	pinMode(STATUS_PIN, OUTPUT);
 	if (Ethernet.hardwareStatus() == EthernetNoHardware) {
 		while (true) {
@@ -72,14 +72,11 @@ HTTPServer::~HTTPServer() {
 	delete this->server;
 }
 
-void HTTPServer::use(HttpMiddleware* middlewares) {
-	this->middlewares = middlewares;
+HTTPServer& HTTPServer::use(const HttpMiddleware* middleware) {
+	this->middlewares->push(middleware);
+	return *this;
 }
 
-struct Metadata {
-	String url;
-	HTTPMethods method;
-};
 Metadata* parseMetadata(const Utilities::SplittedString& splittedString) {
 	auto splitter = new String(" ");
 	auto split = Utilities::split(splittedString.strings[0], *splitter);
@@ -146,10 +143,20 @@ void HTTPServer::listen() {
 				auto body = parseBody(*parsedRequest);
 				delete parsedRequest;
 				HTTPRequest request(&metadata->url, metadata->method, headers, body, false);
-				HTTPResponse* response = this->middlewares[0].middleware(request);
+				HTTPResponse* response = nullptr;
+				Serial.println(this->middlewares->length());
+				for (int i = 0; i < this->middlewares->length(); i++) {
+					if ((*this->middlewares)[i]->method == metadata->method) {
+						if ((*this->middlewares)[i]->url == metadata->url) {
+							response = (*this->middlewares)[i]->middleware(request);
+							break;
+						}
+					}
+				}
 				delete metadata;
 				delete headers;
 				delete body;
+				if (response == nullptr) response = new HTTPResponse {500, new String[1] {"Content-Type: application/json"}, 1, new String("{ Error: 500 }")};
 				client.println("HTTP/1.0 " + String(response->statusCode) + " OK");
 				for (int i = 0; i < response->headersCount; i++)
 					client.println(response->headers[i]);

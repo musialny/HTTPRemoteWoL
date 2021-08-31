@@ -8,10 +8,11 @@
 #ifndef MIDDLEWARES_H_
 #define MIDDLEWARES_H_
 
-#include "HTTPServer.h"
+#include "HTTPServer.h"	
 
 namespace Middlewares {
-	HttpMiddleware* getMiddlewares();
+	HttpMiddleware* homePage();
+	HttpMiddleware* subPage();
 }
 
 #endif /* MIDDLEWARES_H_ */

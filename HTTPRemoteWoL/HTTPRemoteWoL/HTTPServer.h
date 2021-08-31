@@ -10,11 +10,17 @@
 
 #include <SPI.h>
 #include <Ethernet.h>
+#include "ElasticArray.h"
 
 enum class HTTPMethods {
 	GET,
 	POST,
 	DELETE
+};
+
+struct Metadata {
+	String url;
+	HTTPMethods method;
 };
 
 struct HTTPHeaders {
@@ -54,14 +60,14 @@ struct HttpMiddleware {
 class HTTPServer
 {
 private:
-	HttpMiddleware* middlewares;
+	ElasticArray<const HttpMiddleware*>* middlewares;
 	EthernetServer* server;
 	
 public:
 	HTTPServer(byte* deviceMacAddress, IPAddress* ip, int port = 80);
 	~HTTPServer();
 	
-	void use(HttpMiddleware* middlewares);
+	HTTPServer& use(const HttpMiddleware* middleware);
 	void listen();
 };
 
