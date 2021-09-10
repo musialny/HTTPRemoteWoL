@@ -32,10 +32,10 @@ HTTPResponse::~HTTPResponse() {
 	}
 }
 
-HTTPServer::HTTPServer(byte* deviceMacAddress, IPAddress* ip, int port) {
+HTTPServer::HTTPServer(const byte deviceMacAddress[6], const IPAddress& ip, int port) {
 	this->middlewares = new ElasticArray<const HttpMiddleware*>;
 	this->server = new EthernetServer(port);
-	Ethernet.begin(deviceMacAddress, *ip);
+	Ethernet.begin(const_cast<byte*>(deviceMacAddress), ip);
 	pinMode(STATUS_PIN, OUTPUT);
 	if (Ethernet.hardwareStatus() == EthernetNoHardware) {
 		while (true) {
