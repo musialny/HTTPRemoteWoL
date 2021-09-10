@@ -8,7 +8,7 @@
 #ifndef UTILITIES_H_
 #define UTILITIES_H_
 
-#include "WString.h"
+#include <WString.h>
 #include "ElasticArray.h"
 
 namespace Utilities {

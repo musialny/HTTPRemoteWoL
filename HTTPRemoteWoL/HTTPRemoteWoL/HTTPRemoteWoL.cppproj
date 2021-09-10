@@ -102,6 +102,7 @@
             <Value>..\include\libraries\Ethernet\src</Value>
             <Value>..\include\libraries\Ethernet\src\utility</Value>
             <Value>..\include\libraries\SPI\src</Value>
+            <Value>..\include\libraries\EEPROM\src</Value>
           </ListValues>
         </avrgcc.compiler.directories.IncludePaths>
         <avrgcc.compiler.optimization.level>Optimize for size (-Os)</avrgcc.compiler.optimization.level>
@@ -133,6 +134,7 @@
             <Value>..\include\libraries\Ethernet\src</Value>
             <Value>..\include\libraries\Ethernet\src\utility</Value>
             <Value>..\include\libraries\SPI\src</Value>
+            <Value>..\include\libraries\EEPROM\src</Value>
           </ListValues>
         </avrgcccpp.compiler.directories.IncludePaths>
         <avrgcccpp.compiler.optimization.level>Optimize for size (-Os)</avrgcccpp.compiler.optimization.level>
@@ -188,6 +190,7 @@
             <Value>..\include\libraries\Ethernet\src</Value>
             <Value>..\include\libraries\Ethernet\src\utility</Value>
             <Value>..\include\libraries\SPI\src</Value>
+            <Value>..\include\libraries\EEPROM\src</Value>
           </ListValues>
         </avrgcc.compiler.directories.IncludePaths>
         <avrgcc.compiler.optimization.level>Optimize for size (-Os)</avrgcc.compiler.optimization.level>
@@ -219,6 +222,7 @@
             <Value>..\include\libraries\Ethernet\src</Value>
             <Value>..\include\libraries\Ethernet\src\utility</Value>
             <Value>..\include\libraries\SPI\src</Value>
+            <Value>..\include\libraries\EEPROM\src</Value>
           </ListValues>
         </avrgcccpp.compiler.directories.IncludePaths>
         <avrgcccpp.compiler.optimization.level>Optimize for size (-Os)</avrgcccpp.compiler.optimization.level>
@@ -262,6 +266,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="HTTPServer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="include\libraries\EEPROM\src\EEPROM.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="include\libraries\Ethernet\src\Dhcp.h">
@@ -324,6 +331,12 @@
     <Compile Include="src\libraries\SPI\src\SPI.cpp">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="Storage.cpp">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="Storage.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="Utilities.cpp">
       <SubType>compile</SubType>
     </Compile>
@@ -340,6 +353,8 @@
   <ItemGroup>
     <Folder Include="include\" />
     <Folder Include="include\libraries\" />
+    <Folder Include="include\libraries\EEPROM\" />
+    <Folder Include="include\libraries\EEPROM\src\" />
     <Folder Include="include\libraries\Ethernet\" />
     <Folder Include="include\libraries\Ethernet\src\" />
     <Folder Include="include\libraries\Ethernet\src\utility\" />

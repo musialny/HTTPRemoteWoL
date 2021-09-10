@@ -10,14 +10,8 @@
 
 constexpr int STATUS_PIN = 9;
 
-HTTPRequest::HTTPRequest(String* url, HTTPMethods method, HTTPHeaders* headers, String* body, void* data, bool deleteBody) {
-	this->url = url;
-	this->method = method;
-	this->headers = headers;
-	this->body = body;
-	this->data = data;
-	this->deleteBody = deleteBody;
-}
+HTTPRequest::HTTPRequest(String* url, HTTPMethods method, HTTPHeaders* headers, String* body, void* data, bool deleteBody) :
+	url(url), method(method), headers(headers), body(body), data(data), deleteBody(deleteBody) {}
 
 HTTPRequest::~HTTPRequest() {
 	if (deleteBody)	{
@@ -28,13 +22,8 @@ HTTPRequest::~HTTPRequest() {
 	}
 }
 
-HTTPResponse::HTTPResponse(int statusCode, String* headers, int headersCount, String* body, bool deleteBody) {
-	this->statusCode = statusCode;
-	this->headers = headers;
-	this->headersCount = headersCount;
-	this->body = body;
-	this->deleteBody = deleteBody;
-}
+HTTPResponse::HTTPResponse(int statusCode, String* headers, int headersCount, String* body, bool deleteBody) : 
+	statusCode(statusCode), headers(headers), headersCount(headersCount), body(body), deleteBody(deleteBody) {}
 
 HTTPResponse::~HTTPResponse() {
 	if (deleteBody)	{
@@ -159,10 +148,10 @@ void HTTPServer::listen() {
 				client.println("HTTP/1.1 " + String(response->statusCode) + " OK");
 				for (int i = 0; i < response->headersCount; i++)
 					client.println(response->headers[i]);
-				client.println("X-Powered-By: musialny.dev");	
+				client.println("X-Powered-By: musialny.dev");
 				client.println("Connection: close");
 				client.println();
-				client.println(*response->body);
+				client.println(response->body == nullptr ? "" : *response->body);
 				client.println();
 				delete response;
 				break;

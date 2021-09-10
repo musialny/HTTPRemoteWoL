@@ -7,15 +7,16 @@
 
 #include "Middlewares.h"
 #include "WoL.h"
+#include "Storage.h"
 
 const byte woLaddressesList[][6] = {{ 0x18, 0xC0, 0x4D, 0x85, 0x10, 0x2F }};
 extern WoLHandler* wol;
 
 HttpMiddleware* Middlewares::auth() {
 	return new HttpMiddleware {HTTPMethods::ALL, String("*"), [](HTTPRequest& request) -> HTTPResponse* {
-		if (request.data == nullptr) request.data = new int {0};
-		(*reinterpret_cast<int*>(request.data))++;
-		return nullptr;
+		
+		return new HTTPResponse({401, new String[1] {"WWW-Authenticate: Basic realm=\"Authorization needed\""}, 1, nullptr});
+		// return nullptr;
 	}};
 }
 
