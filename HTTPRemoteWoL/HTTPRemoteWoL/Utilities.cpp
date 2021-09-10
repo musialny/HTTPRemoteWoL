@@ -6,7 +6,6 @@
  */ 
 
 #include "Utilities.h"
-#include <Arduino.h>
 
 Utilities::SplittedString::SplittedString() {
 	this->amount = 0;

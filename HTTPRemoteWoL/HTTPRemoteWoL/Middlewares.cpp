@@ -8,8 +8,6 @@
 #include "Middlewares.h"
 #include "WoL.h"
 
-#include <Arduino.h>
-
 const byte woLaddressesList[][6] = {{ 0x18, 0xC0, 0x4D, 0x85, 0x10, 0x2F }};
 extern WoLHandler* wol;
 
