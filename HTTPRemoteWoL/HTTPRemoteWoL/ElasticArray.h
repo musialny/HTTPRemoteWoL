@@ -11,7 +11,6 @@
 template<typename T>
 class ElasticArray
 {
-// private:
 public:
 	T* array;
 	int arrayLength;
