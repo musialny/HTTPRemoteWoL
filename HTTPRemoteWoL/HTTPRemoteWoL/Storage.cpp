@@ -22,8 +22,7 @@ Storage::User::User(String username, String password, UserPermissions permission
 }
 
 void Storage::initStorage(byte userAmount) {
-	auto userAmountStatus = EEPROM.read(USER_DATA_ADDRESS);
-	if (userAmountStatus == 255) {
+	if (EEPROM.read(USER_DATA_ADDRESS) == 255) {
 		EEPROM.write(USER_DATA_ADDRESS, userAmount);
 		for (int i = 0; i < userAmount; i++)
 			EEPROM.put(sizeof(byte) + (i * sizeof(Storage::User)), !i ? Storage::User("admin", "adminadmin", Storage::UserPermissions::ADMIN) : Storage::User());
@@ -32,4 +31,14 @@ void Storage::initStorage(byte userAmount) {
 
 byte Storage::readRawStorage(int address) {
 	return EEPROM.read(address);
+}
+
+byte Storage::getUsersAmount() {
+	return EEPROM.read(USER_DATA_ADDRESS);
+}
+
+Storage::User* Storage::getUserCredentials(byte userId) {
+	auto user = new Storage::User;
+	EEPROM.get(!userId ? sizeof(byte) : sizeof(byte) + (userId * sizeof(Storage::User)), *user);
+	return user;
 }

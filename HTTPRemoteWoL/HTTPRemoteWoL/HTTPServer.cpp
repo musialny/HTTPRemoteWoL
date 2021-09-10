@@ -55,7 +55,6 @@ HTTPServer::HTTPServer(byte* deviceMacAddress, IPAddress* ip, int port) {
 		}
 	}
 	digitalWrite(STATUS_PIN, LOW);
-	
 	this->server->begin();
 }
 
@@ -82,12 +81,12 @@ Metadata* parseMetadata(const String& requestLine) {
 
 void parseHeaders(HTTPHeaders* headers, const String& requestLine) {
 	constexpr int _headers = (sizeof(HTTPHeaders) - sizeof(IPAddress)) / sizeof(String);
-	const String keys[_headers][2] = {{"Host: ", "host: "}, {"Content-Type: ", "content-type: "}};
+	const String keys[_headers][2] = {{"Host: ", "host: "}, {"Content-Type: ", "content-type: "}, {"Authorization: ", "authorization: "}};
 	for (int i = 0; i < _headers; i++) {
 		for (int o = 0; o < 2; o++) {
 			auto exists = Utilities::findAll(requestLine, keys[i][o]);
 			if (exists->length()) {
-				auto res = Utilities::split(requestLine, " ");
+				auto res = Utilities::split(requestLine, keys[i][o]);
 				reinterpret_cast<String*>(headers)[i] = res->strings[1];
 				delete exists;
 				delete res;
@@ -151,7 +150,7 @@ void HTTPServer::listen() {
 				client.println("X-Powered-By: musialny.dev");
 				client.println("Connection: close");
 				client.println();
-				client.println(response->body == nullptr ? "" : *response->body);
+				client.println(*response->body);
 				client.println();
 				delete response;
 				break;

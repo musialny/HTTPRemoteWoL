@@ -27,6 +27,7 @@ struct Metadata {
 struct HTTPHeaders {
 	String host;
 	String contentType;
+	String authorization;
 	IPAddress ip;
 };
 

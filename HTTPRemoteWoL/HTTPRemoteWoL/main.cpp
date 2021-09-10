@@ -15,7 +15,7 @@ void setup() {
 	Serial.println("[Serial Port Started]\n");
 	
 	// for (int i = 0; i < 1024; i++) EEPROM.write(i, 255);
-	Storage::initStorage(2);
+	Storage::initStorage(5);
 	
 	for (int i = 0; i < 1024; i++) {
 		char result = Storage::readRawStorage(i);
@@ -26,12 +26,21 @@ void setup() {
 	for (int i = 0; i < 1024; i++) {
 		char result = Storage::readRawStorage(i);
 		if (result != 255)
-		Serial.print(String(result) + [&result]() -> String {
-			String returnable;
-			if (result == 0) return " ";
-			for (int i = 0; i < String(static_cast<byte>(result)).length() - 1; i++) returnable += " ";
-			return returnable;
-		}() + "|");
+			Serial.print(String(result) + [&result]() -> String {
+				String returnable;
+				if (result == 0) return " ";
+				for (int i = 0; i < String(static_cast<byte>(result)).length() - 1; i++) returnable += " ";
+				return returnable;
+			}() + "|");
+	}
+	Serial.println();
+	for (int i = 0; i < Storage::getUsersAmount(); i++) {
+		auto user = Storage::getUserCredentials(i);
+		Serial.print("user->username = " + String(user->username));
+		Serial.print(" | user->password = " + String(user->password));
+		Serial.print(" | user->permissions = " + String(static_cast<byte>(user->permissions)));
+		Serial.println();
+		delete user;
 	}
 
 	httpServer = new HTTPServer(new (byte[6]){0xC0, 0x06, 0x42, 0xC4, 0x40, 0x9D}, new IPAddress(10, 10, 0, 10), 80);

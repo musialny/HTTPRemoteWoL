@@ -5,7 +5,6 @@
 * Author: musialny
 */
 
-
 #ifndef __STORAGE_H__
 #define __STORAGE_H__
 
@@ -14,8 +13,8 @@
 
 namespace Storage {
 	enum class UserPermissions: byte {
-		ADMIN,
-		USER
+		USER,
+		ADMIN
 	};	
 
 	struct User {
@@ -28,6 +27,8 @@ namespace Storage {
 	
 	void initStorage(byte userAmount);
 	byte readRawStorage(int address);
+	byte getUsersAmount();
+	Storage::User* getUserCredentials(byte userId);
 }
 
 #endif //__STORAGE_H__

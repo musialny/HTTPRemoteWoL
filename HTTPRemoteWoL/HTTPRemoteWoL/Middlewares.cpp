@@ -14,9 +14,8 @@ extern WoLHandler* wol;
 
 HttpMiddleware* Middlewares::auth() {
 	return new HttpMiddleware {HTTPMethods::ALL, String("*"), [](HTTPRequest& request) -> HTTPResponse* {
-		
-		return new HTTPResponse({401, new String[1] {"WWW-Authenticate: Basic realm=\"Authorization needed\""}, 1, nullptr});
-		// return nullptr;
+		// return new HTTPResponse({401, new String[1] {"WWW-Authenticate: Basic realm=\"Authorization needed\""}, 1, new String});
+		return nullptr;
 	}};
 }
 
@@ -46,11 +45,11 @@ HttpMiddleware* Middlewares::homePage(HTTPMethods method) {
 			if (i < 3) *resultBody += ".";
 		}
 		*resultBody += "</h4>";
+		*resultBody += "<h4>Authorization: ";
+		*resultBody += request.headers->authorization;
+		*resultBody += "</h4>";
 		*resultBody += "<h4>Body: ";
 		*resultBody += *request.body;
-		*resultBody += "</h4>";
-		*resultBody += "<h4>Incrementator: ";
-		*resultBody += ++(*reinterpret_cast<int*>(request.data));
 		*resultBody += "</h4>";
 		*resultBody += "</body></html>";
 		sendMagicPacket(*wol, woLaddressesList[0]);
@@ -60,6 +59,6 @@ HttpMiddleware* Middlewares::homePage(HTTPMethods method) {
 
 HttpMiddleware* Middlewares::subPage() {
 	return new HttpMiddleware {HTTPMethods::POST, String("/post"), [](HTTPRequest& request) -> HTTPResponse* {
-		return new HTTPResponse {200, new String[1] {"Content-Type: application/json"}, 1, new String("{ isJSON: true, some void* value: " + String(*reinterpret_cast<int*>(request.data)) + " }")};
+		return new HTTPResponse {200, new String[1] {"Content-Type: application/json"}, 1, new String("{ isJSON: true }")};
 	}};
 }
