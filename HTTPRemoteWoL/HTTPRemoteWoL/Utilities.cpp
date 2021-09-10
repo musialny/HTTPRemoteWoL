@@ -41,7 +41,7 @@ Utilities::SplittedString* Utilities::split(const String& value, const String& s
 		result->strings = new String[result->amount];
 		int index = 0;
 		for (int i = 0; i < value.length(); i++) {
-			if (i == (*splitPoints)[index]) {
+			if (i == (*splitPoints)[index < splitPoints->length() ? index : 0]) {
 				i += splitter.length();
 				if (i >= value.length()) break;
 				index++;

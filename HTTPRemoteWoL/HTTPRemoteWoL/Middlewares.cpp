@@ -21,8 +21,8 @@ HttpMiddleware* Middlewares::auth() {
 	}};
 }
 
-HttpMiddleware* Middlewares::homePage() {
-	return new HttpMiddleware {HTTPMethods::GET, String("/"), [](HTTPRequest& request) -> HTTPResponse* {
+HttpMiddleware* Middlewares::homePage(HTTPMethods method) {
+	return new HttpMiddleware {method, String("/"), [](HTTPRequest& request) -> HTTPResponse* {
 		auto resultBody = new String("<!DOCTYPE HTML><html><head><title>OwO</title></head><body>");
 		*resultBody += "<h1>Method: ";
 		if (request.method == HTTPMethods::GET)

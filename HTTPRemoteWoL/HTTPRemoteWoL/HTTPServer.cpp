@@ -79,10 +79,9 @@ HTTPServer& HTTPServer::use(const HttpMiddleware* middleware) {
 	return *this;
 }
 
-Metadata* parseMetadata(const Utilities::SplittedString& splittedString) {
-	auto splitter = new String(" ");
-	auto split = Utilities::split(splittedString.strings[0], *splitter);
-	delete splitter;
+Metadata* parseMetadata(const String& requestLine) {
+	String splitter(' ');
+	auto split = Utilities::split(requestLine, splitter);
 	auto result = new Metadata;
 	if (split->strings[0] == String("GET")) result->method = HTTPMethods::GET;
 	else if (split->strings[0] == String("POST")) result->method = HTTPMethods::POST;
@@ -92,59 +91,55 @@ Metadata* parseMetadata(const Utilities::SplittedString& splittedString) {
 	return result;
 }
 
-HTTPHeaders* parseHeaders(const EthernetClient& client, const Utilities::SplittedString& splittedString) {
-	auto result = new HTTPHeaders;
-	String splitter(' ');
+void parseHeaders(HTTPHeaders* headers, const String& requestLine) {
 	constexpr int _headers = (sizeof(HTTPHeaders) - sizeof(IPAddress)) / sizeof(String);
-	String headers[2][2] = {{"Host", "host"}, {"Content-Type", "content-type"}};
-	for (int i = 0; i < splittedString.amount; i++) {
-		if (splittedString.strings[i].length() == 1 && splittedString.strings[i] == String('\n')) break;
-		for (int o = 0; o < _headers; o++) {
-			int isBreaked = false;
-			for (int p = 0; p < 2; p++) {
-				auto findResult = Utilities::findAll(splittedString.strings[i], headers[o][p]);
-				if (findResult->length()) {
-					delete findResult;
-					auto res = Utilities::split(splittedString.strings[i], splitter);
-					reinterpret_cast<String*>(result)[o] = res->strings[1];
-					delete res;
-					isBreaked = true;
-					break;
-				}
-				delete findResult;
+	const String keys[_headers][2] = {{"Host: ", "host: "}, {"Content-Type: ", "content-type: "}};
+	for (int i = 0; i < _headers; i++) {
+		for (int o = 0; o < 2; o++) {
+			auto exists = Utilities::findAll(requestLine, keys[i][o]);
+			if (exists->length()) {
+				auto res = Utilities::split(requestLine, " ");
+				reinterpret_cast<String*>(headers)[i] = res->strings[1];
+				delete exists;
+				delete res;
+				return;
 			}
-			if (isBreaked) break;
+			delete exists;
 		}
 	}
-	result->ip = const_cast<EthernetClient*>(&client)->remoteIP();
-	return result;
-}
-
-String* parseBody(const Utilities::SplittedString& splittedString) {
-	String* result = new String(splittedString.strings[splittedString.amount - 1]);
-	return result;
 }
 
 void HTTPServer::listen() {
 	auto client = server->available();
 	if (client) {
-		auto rawRequest = new String;
+		auto rawRequestLine = new String;
+		int parsingStage = 0;
+		Metadata* metadata = nullptr;
+		HTTPHeaders* headers = new HTTPHeaders;
+		headers->ip = client.remoteIP();
+		String* body = nullptr;
 		while (client.connected()) {
-			if (client.available()) *rawRequest += static_cast<char>(client.read());
-			else {
-				auto splitter = new String('\n');
-				auto parsedRequest = Utilities::split(*rawRequest, *splitter);
-				delete rawRequest;
-				delete splitter;
-				for (int i = 0; i < parsedRequest->amount; i++) {
-					auto buffer = parsedRequest->strings[i].charAt(parsedRequest->strings[i].length() - 1);	
-					if (buffer == '\r' || buffer == '\0') parsedRequest->strings[i].remove(parsedRequest->strings[i].length() - 1, 1);
-				}
-				auto metadata = parseMetadata(*parsedRequest);
-				auto headers = parseHeaders(client, *parsedRequest);
-				auto body = parseBody(*parsedRequest);
-				delete parsedRequest;
-				Serial.println(String("headers->contentType[" + String(headers->contentType.length()) + "] -> " + headers->contentType));
+			if (client.available()) { 
+				char c = client.read();
+				if (c == '\n' && parsingStage < 2) {
+					switch(parsingStage) {
+						case 0:
+							metadata = parseMetadata(*rawRequestLine);
+							*rawRequestLine = "";
+							parsingStage = 1;
+						break;
+						
+						case 1:
+							if (rawRequestLine->length() == 1) parsingStage = 2;
+							else {
+								parseHeaders(headers, *rawRequestLine);
+								*rawRequestLine = "";
+							}
+						break;
+					}
+				} else if (c != '\r' && c != '\0') *rawRequestLine += c;
+			} else {
+				body = rawRequestLine;
 				HTTPRequest request(&metadata->url, metadata->method, headers, body, nullptr, false);
 				HTTPResponse* response = nullptr;
 				for (int i = 0; i < this->middlewares->length(); i++) {
@@ -152,21 +147,19 @@ void HTTPServer::listen() {
 						if ((*this->middlewares)[i]->url == metadata->url || (*this->middlewares)[i]->url == String("*")) {
 							response = (*this->middlewares)[i]->middleware(request);
 							if (response == nullptr) continue;
-							else {
-								delete request.data;
-								break;
-							}
+							else break;
 						}
 					}
 				}
+				delete request.data;
 				delete metadata;
 				delete headers;
 				delete body;
 				if (response == nullptr) response = new HTTPResponse {500, new String[1] {"Content-Type: application/json"}, 1, new String("{ Error: 500 }")};
-				client.println("HTTP/1.0 " + String(response->statusCode) + " OK");
+				client.println("HTTP/1.1 " + String(response->statusCode) + " OK");
 				for (int i = 0; i < response->headersCount; i++)
 					client.println(response->headers[i]);
-				client.println("X-Powered-By: musialny.dev");
+				client.println("X-Powered-By: musialny.dev");	
 				client.println("Connection: close");
 				client.println();
 				client.println(*response->body);
