@@ -11,7 +11,7 @@
 #include <Arduino.h>
 #include <WString.h>
 
-namespace Storage {
+namespace EEPROMStorage {
 	enum class UserPermissions: byte {
 		USER,
 		ADMIN
@@ -22,13 +22,13 @@ namespace Storage {
 		char password[12];
 		UserPermissions permissions;
 
-		User(String username = "", String password = "", Storage::UserPermissions permissions = Storage::UserPermissions::USER);
+		User(String username = "", String password = "", EEPROMStorage::UserPermissions permissions = EEPROMStorage::UserPermissions::USER);
 	};
 	
 	void initStorage(byte userAmount);
 	byte readRawStorage(int address);
 	byte getUsersAmount();
-	Storage::User* getUserCredentials(byte userId);
+	EEPROMStorage::User* getUserCredentials(byte userId);
 }
 
 #endif //__STORAGE_H__

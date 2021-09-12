@@ -7,6 +7,7 @@
 
 #include "HTTPServer.h"
 #include "Utilities.h"
+#include "FlashStorage.h"
 
 constexpr int STATUS_PIN = 9;
 
@@ -68,8 +69,7 @@ HTTPServer& HTTPServer::use(const HttpMiddleware* middleware) {
 }
 
 Metadata* parseMetadata(const String& requestLine) {
-	String splitter(' ');
-	auto split = Utilities::split(requestLine, splitter);
+	auto split = Utilities::split(requestLine, " ");
 	auto result = new Metadata;
 	if (split->strings[0] == String("GET")) result->method = HTTPMethods::GET;
 	else if (split->strings[0] == String("POST")) result->method = HTTPMethods::POST;
@@ -81,7 +81,9 @@ Metadata* parseMetadata(const String& requestLine) {
 
 void parseHeaders(HTTPHeaders* headers, const String& requestLine) {
 	constexpr int _headers = (sizeof(HTTPHeaders) - sizeof(IPAddress)) / sizeof(String);
-	const String keys[_headers][2] = {{"Host: ", "host: "}, {"Content-Type: ", "content-type: "}, {"Authorization: ", "authorization: "}};
+	const String keys[_headers][2] = {{FlashStorage<char>(PSTR("Host: "))(), FlashStorage<char>(PSTR("host: "))()},
+									  {FlashStorage<char>(PSTR("Content-Type: "))(), FlashStorage<char>(PSTR("content-type: "))()},
+									  {FlashStorage<char>(PSTR("Authorization: "))(), FlashStorage<char>(PSTR("authorization: "))()}};
 	for (int i = 0; i < _headers; i++) {
 		for (int o = 0; o < 2; o++) {
 			auto exists = Utilities::findAll(requestLine, keys[i][o]);
@@ -143,12 +145,12 @@ void HTTPServer::listen() {
 				delete metadata;
 				delete headers;
 				delete body;
-				if (response == nullptr) response = new HTTPResponse {500, new String[1] {"Content-Type: application/json"}, 1, new String("{ Error: 500 }")};
+				if (response == nullptr) response = new HTTPResponse {500, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 500 }"))())};
 				client.println("HTTP/1.1 " + String(response->statusCode) + " OK");
 				for (int i = 0; i < response->headersCount; i++)
 					client.println(response->headers[i]);
-				client.println("X-Powered-By: musialny.dev");
-				client.println("Connection: close");
+				client.println(FlashStorage<char>(PSTR("X-Powered-By: musialny.dev"))());
+				client.println(FlashStorage<char>(PSTR("Connection: close"))());
 				client.println();
 				client.println(*response->body);
 				client.println();

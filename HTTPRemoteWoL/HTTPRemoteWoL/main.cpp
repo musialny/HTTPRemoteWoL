@@ -4,27 +4,28 @@
 #include "HTTPServer.h"
 #include "Middlewares.h"
 #include "WoL.h"
-#include "Storage.h"
+#include "EEPROMStorage.h"
+#include "FlashStorage.h"
 // #include <EEPROM.h>
 
-WoLHandler* wol;
+WoLHandler* wolHandler;
 HTTPServer* httpServer;
 
 void setup() {
 	Serial.begin(9600);
-	Serial.println("[Serial Port Inited]\n");
+	Serial.println(FlashStorage<char>(PSTR("[Serial Port Inited]\n"))());
 	
 	// for (int i = 0; i < 1024; i++) EEPROM.write(i, 255);
-	Storage::initStorage(5);
+	EEPROMStorage::initStorage(5);
 	
 	for (int i = 0; i < 1024; i++) {
-		char result = Storage::readRawStorage(i);
+		char result = EEPROMStorage::readRawStorage(i);
 		if (result != 255)
 			Serial.print(String(static_cast<byte>(result)) + "|");
 	}
 	Serial.println();
 	for (int i = 0; i < 1024; i++) {
-		char result = Storage::readRawStorage(i);
+		char result = EEPROMStorage::readRawStorage(i);
 		if (result != 255)
 			Serial.print(String(result) + [&result]() -> String {
 				String returnable;
@@ -34,11 +35,11 @@ void setup() {
 			}() + "|");
 	}
 	Serial.println();
-	for (int i = 0; i < Storage::getUsersAmount(); i++) {
-		auto user = Storage::getUserCredentials(i);
-		Serial.print("user->username = " + String(user->username));
-		Serial.print(" | user->password = " + String(user->password));
-		Serial.print(" | user->permissions = " + String(static_cast<byte>(user->permissions)));
+	for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
+		auto user = EEPROMStorage::getUserCredentials(i);
+		Serial.print(FlashStorage<char>(PSTR("user->username = "))() + String(user->username));
+		Serial.print(FlashStorage<char>(PSTR(" | user->password = "))() + String(user->password));
+		Serial.print(FlashStorage<char>(PSTR(" | user->permissions = "))() + String(static_cast<byte>(user->permissions)));
 		Serial.println();
 		delete user;
 	}
@@ -46,10 +47,17 @@ void setup() {
 	const byte deviceMac[6] = {0xC0, 0x06, 0x42, 0xC4, 0x40, 0x9D};
 	const byte broadcastAddress[4] = { 10, 10, 0, 255 };
 	httpServer = new HTTPServer(deviceMac, IPAddress(10, 10, 0, 10), 80);
-	httpServer->use(Middlewares::auth()).use(Middlewares::homePage()).use(Middlewares::homePage(HTTPMethods::POST)).use(Middlewares::subPage());
-	wol = new WoLHandler(broadcastAddress);
+	httpServer->use(Middlewares::auth())
+		.use(Middlewares::homePage())
+		.use(Middlewares::homePage(HTTPMethods::POST))
+		.use(Middlewares::subPage())
+		.use(Middlewares::wol())
+		.use(Middlewares::notFound404());
+	wolHandler = new WoLHandler(broadcastAddress);
 }
 
 void loop() {
 	httpServer->listen();
 }
+
+// TODO: Create request limiters

@@ -14,6 +14,9 @@ namespace Middlewares {
 	HttpMiddleware* auth();
 	HttpMiddleware* homePage(HTTPMethods method = HTTPMethods::GET);
 	HttpMiddleware* subPage();
+	HttpMiddleware* wol();
+	
+	HttpMiddleware* notFound404();
 }
 
 #endif /* MIDDLEWARES_H_ */

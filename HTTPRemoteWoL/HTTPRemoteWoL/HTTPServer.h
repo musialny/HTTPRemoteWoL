@@ -60,8 +60,7 @@ struct HttpMiddleware {
 	HTTPResponse* (*middleware)(HTTPRequest& request);
 };
 
-class HTTPServer
-{
+class HTTPServer {
 private:
 	ElasticArray<const HttpMiddleware*>* middlewares;
 	EthernetServer* server;
