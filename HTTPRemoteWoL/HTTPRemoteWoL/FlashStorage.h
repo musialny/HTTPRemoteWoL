@@ -27,11 +27,11 @@ public:
 
 template<>
 class FlashStorage<char> {
-	private:
+private:
 	const char* flashMemoryPointer;
 	String result;
 	
-	public:
+public:
 	FlashStorage(const char* flashMemoryPointer) : flashMemoryPointer(flashMemoryPointer) {};
 	~FlashStorage() = default;
 	

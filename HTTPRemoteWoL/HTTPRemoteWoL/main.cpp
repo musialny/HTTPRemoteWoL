@@ -6,6 +6,7 @@
 #include "WoL.h"
 #include "EEPROMStorage.h"
 #include "FlashStorage.h"
+#include "Utilities.h"
 // #include <EEPROM.h>
 
 WoLHandler* wolHandler;
@@ -17,6 +18,9 @@ void setup() {
 	
 	// for (int i = 0; i < 1024; i++) EEPROM.write(i, 255);
 	EEPROMStorage::initStorage(5);
+	auto res = Utilities::decodeBASE64("YWRtaW46YWRtaW5hZG1pbg==");
+	Serial.println(*res);
+	delete res;
 	
 	for (int i = 0; i < 1024; i++) {
 		char result = EEPROMStorage::readRawStorage(i);
