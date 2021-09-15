@@ -26,7 +26,8 @@ HttpMiddleware* Middlewares::auth() {
 				if (credentials->amount == 2) {
 					for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 						auto user = EEPROMStorage::getUserCredentials(i);
-						if (credentials->strings[0] == user->username && credentials->strings[1] == user->password) {
+						if (Utilities::compareFixedSizeArray(credentials->strings[0], user->username, sizeof(user->username)) &&
+							Utilities::compareFixedSizeArray(credentials->strings[1], user->password, sizeof(user->password))) {
 							delete credentials;
 							delete user;
 							request.data = new byte {static_cast<byte>(user->permissions)};
@@ -48,8 +49,8 @@ HttpMiddleware* Middlewares::auth() {
 	}};
 }
 
-HttpMiddleware* Middlewares::homePage(HTTPMethods method) {
-	return new HttpMiddleware {method, FlashStorage<char>(PSTR("/"))(), [](HTTPRequest& request) -> HTTPResponse* {
+HttpMiddleware* Middlewares::homePage() {
+	return new HttpMiddleware {HTTPMethods::GET, FlashStorage<char>(PSTR("/"))(), [](HTTPRequest& request) -> HTTPResponse* {
 		auto resultBody = new String(FlashStorage<char>(PSTR("<!DOCTYPE HTML><html><head><title>OwO</title></head><body>"))());
 		*resultBody += FlashStorage<char>(PSTR("<h1>Method: "))();
 		if (request.method == HTTPMethods::GET)
@@ -89,12 +90,6 @@ HttpMiddleware* Middlewares::homePage(HTTPMethods method) {
 		*resultBody += FlashStorage<char>(PSTR("</h4>"))();
 		*resultBody += FlashStorage<char>(PSTR("</body></html>"))();
 		return new HTTPResponse {200, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/html"))()}, 1, resultBody};
-	}};
-}
-
-HttpMiddleware* Middlewares::subPage() {
-	return new HttpMiddleware {HTTPMethods::POST, FlashStorage<char>(PSTR("/post"))(), [](HTTPRequest& request) -> HTTPResponse* {
-		return new HTTPResponse {200, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"isJSON\": true }"))())};
 	}};
 }
 

@@ -24,6 +24,7 @@ namespace Utilities {
 	SplittedString* split(const String& value, const String& splitter);
 	SplittedString* split(const String& value, int maxArraySize);
 	String* decodeBASE64(const String& value, size_t inputShrink = 0);
+	bool compareFixedSizeArray(const String& value, const char fixedSizeArray[], size_t arraySize);
 }
 
 #endif /* UTILITIES_H_ */

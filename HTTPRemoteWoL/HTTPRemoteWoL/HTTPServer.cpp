@@ -109,7 +109,7 @@ void HTTPServer::listen() {
 		headers->ip = client.remoteIP();
 		String* body = nullptr;
 		while (client.connected()) {
-			if (client.available()) { 
+			if (client.available()) {
 				char c = client.read();
 				if (c == '\n' && parsingStage < 2) {
 					switch(parsingStage) {
