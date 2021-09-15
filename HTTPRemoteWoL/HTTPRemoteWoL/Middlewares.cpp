@@ -16,29 +16,31 @@ extern WoLHandler* wolHandler;
 
 HttpMiddleware* Middlewares::auth() {
 	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>(PSTR("*"))(), [](HTTPRequest& request) -> HTTPResponse* {
-		auto autho = Utilities::split(request.headers->authorization, " ");
-		if (autho->amount) {
+		auto autho = Utilities::split(request.headers->authorization, FlashStorage<char>(PSTR(" "))());
+		if (autho->amount == 2) {
 			if (autho->strings[0] == FlashStorage<char>(PSTR("Basic"))()) {
 				auto authorization = Utilities::decodeBASE64(autho->strings[1]);
 				delete autho;
-				auto credentials = Utilities::split(*authorization, ":");
+				auto credentials = Utilities::split(*authorization, FlashStorage<char>(PSTR(":"))());
 				delete authorization;
 				if (credentials->amount == 2) {
 					for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 						auto user = EEPROMStorage::getUserCredentials(i);
-						if (String(user->username) == credentials->strings[0] && String(user->password) == credentials->strings[1]) {
+						if (credentials->strings[0] == user->username && credentials->strings[1] == user->password) {
 							delete credentials;
+							delete user;
 							request.data = new byte {static_cast<byte>(user->permissions)};
 							return nullptr;
 						}
+						delete user;
 					}
 				}
 				delete credentials;
-				return new HTTPResponse({403, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/plain"))()}, 1, new String("Forbidden")});
+				return new HTTPResponse({403, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/plain"))()}, 1, new String(FlashStorage<char>(PSTR("Forbidden"))())});
 			}
 			delete autho;
 			return new HTTPResponse({406, new String[2] {FlashStorage<char>(PSTR("WWW-Authenticate: Basic realm=\"Authorization needed\""))(),
-														 FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1,
+														 FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 2,
 									 new String(FlashStorage<char>(PSTR("{ \"Authenticate Method\": \"Basic\" }"))())});
 		}
 		delete autho;
