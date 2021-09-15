@@ -82,10 +82,10 @@ String* Utilities::decodeBASE64(const String& value, size_t inputShrink) {
 	for (int i = 0; i < value.length() - inputShrink;) {
 		if (i >= value.length() - inputShrink) break;
 		auto chunk = new char[4] {};
-		int iBuffer[4] = {i++, i++, i++, i++};
-		chunk[0] = (encode(value.charAt(iBuffer[0])) << 2) | (encode(value.charAt(iBuffer[1])) >> 4);
-		chunk[1] = (encode(value.charAt(iBuffer[1])) << 4) | (encode(value.charAt(iBuffer[2])) >> 2);
-		chunk[2] = (encode(value.charAt(iBuffer[2])) << 6) | encode(value.charAt(iBuffer[3]));
+		byte buffer[4] = {encode(value.charAt(i++)), encode(value.charAt(i++)), encode(value.charAt(i++)), encode(value.charAt(i++))};
+		chunk[0] = buffer[0] << 2 | buffer[1] >> 4;
+		chunk[1] = buffer[1] << 4 | buffer[2] >> 2;
+		chunk[2] = buffer[2] << 6 | buffer[3];
 		chunk[3] = '\0';
 		*result += chunk;
 		delete[] chunk;
