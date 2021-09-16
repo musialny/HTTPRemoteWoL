@@ -14,8 +14,13 @@
 const byte woLaddressesList[][6] = {{ 0x18, 0xC0, 0x4D, 0x85, 0x10, 0x2F }};
 extern WoLHandler* wolHandler;
 
+// Flash Constants
+const char ASTERIX[] PROGMEM = "*";
+const char HTML_BEGIN[] PROGMEM = "<!DOCTYPE HTML><html><head><title>OwO</title></head><body>";
+const char HTML_END[] PROGMEM = "</body></html>";
+
 HttpMiddleware* Middlewares::auth() {
-	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>(PSTR("*"))(), [](HTTPRequest& request) -> HTTPResponse* {
+	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>::getString(ASTERIX), [](HTTPRequest& request) -> HTTPResponse* {
 		auto autho = Utilities::split(request.headers->authorization, FlashStorage<char>(PSTR(" "))());
 		if (autho->amount == 2) {
 			if (autho->strings[0] == FlashStorage<char>(PSTR("Basic"))()) {
@@ -29,8 +34,8 @@ HttpMiddleware* Middlewares::auth() {
 						if (Utilities::compareFixedSizeArray(credentials->strings[0], user->username, sizeof(user->username)) &&
 							Utilities::compareFixedSizeArray(credentials->strings[1], user->password, sizeof(user->password))) {
 							delete credentials;
+							request.data = new EEPROMStorage::UserMetadata(i, user->username, user->permissions);
 							delete user;
-							request.data = new byte {static_cast<byte>(user->permissions)};
 							return nullptr;
 						}
 						delete user;
@@ -51,7 +56,18 @@ HttpMiddleware* Middlewares::auth() {
 
 HttpMiddleware* Middlewares::homePage() {
 	return new HttpMiddleware {HTTPMethods::GET, FlashStorage<char>(PSTR("/"))(), [](HTTPRequest& request) -> HTTPResponse* {
-		auto resultBody = new String(FlashStorage<char>(PSTR("<!DOCTYPE HTML><html><head><title>OwO</title></head><body>"))());
+		auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+		*resultBody += "<h1>Hello ";
+		*resultBody += String(reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->username);
+		*resultBody += "</h1>";
+		*resultBody += FlashStorage<char>::getString(HTML_END);
+		return new HTTPResponse {200, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/html"))()}, 1, resultBody};
+	}};
+}
+
+HttpMiddleware* Middlewares::debugPage() {
+	return new HttpMiddleware {HTTPMethods::GET, FlashStorage<char>(PSTR("/debugPage"))(), [](HTTPRequest& request) -> HTTPResponse* {
+		auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
 		*resultBody += FlashStorage<char>(PSTR("<h1>Method: "))();
 		if (request.method == HTTPMethods::GET)
 			*resultBody += FlashStorage<char>(PSTR("GET"))();
@@ -88,7 +104,16 @@ HttpMiddleware* Middlewares::homePage() {
 		*resultBody += FlashStorage<char>(PSTR("<h4>Body: "))();
 		*resultBody += *request.body;
 		*resultBody += FlashStorage<char>(PSTR("</h4>"))();
-		*resultBody += FlashStorage<char>(PSTR("</body></html>"))();
+		*resultBody += FlashStorage<char>(PSTR("<h4>ID: "))();
+		*resultBody += String(reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id);
+		*resultBody += FlashStorage<char>(PSTR("</h4>"))();
+		*resultBody += FlashStorage<char>(PSTR("<h4>Username: "))();
+		*resultBody += String(reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->username);
+		*resultBody += FlashStorage<char>(PSTR("</h4>"))();
+		*resultBody += FlashStorage<char>(PSTR("<h4>Permission Level: "))();
+		*resultBody += String(static_cast<byte>(reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions));
+		*resultBody += FlashStorage<char>(PSTR("</h4>"))();
+		*resultBody += FlashStorage<char>::getString(HTML_END);
 		return new HTTPResponse {200, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/html"))()}, 1, resultBody};
 	}};
 }
@@ -101,7 +126,7 @@ HttpMiddleware* Middlewares::wol() {
 }
 
 HttpMiddleware* Middlewares::notFound404() {
-	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>(PSTR("*"))(), [](HTTPRequest& request) -> HTTPResponse* {
+	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>::getString(ASTERIX), [](HTTPRequest& request) -> HTTPResponse* {
 		return new HTTPResponse {404, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 404 }"))())};
 	}};
 }

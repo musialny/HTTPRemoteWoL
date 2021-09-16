@@ -22,6 +22,11 @@ EEPROMStorage::User::User(String username, String password, UserPermissions perm
 	}
 }
 
+EEPROMStorage::UserMetadata::UserMetadata(byte id, const char username[], EEPROMStorage::UserPermissions permissions) : id(id), permissions(permissions) {
+	memcpy(this->username, username, sizeof(EEPROMStorage::User::username));
+	this->username[sizeof(this->username) - 1] = '\0';
+}
+
 void EEPROMStorage::initStorage(byte userAmount) {
 	if (EEPROM.read(USER_DATA_ADDRESS) == 255) {
 		EEPROM.write(USER_DATA_ADDRESS, userAmount);

@@ -54,6 +54,7 @@ void setup() {
 	httpServer = new HTTPServer(deviceMac, IPAddress(10, 10, 0, 10), 80);
 	httpServer->use(Middlewares::auth())
 		.use(Middlewares::homePage())
+		.use(Middlewares::debugPage())
 		.use(Middlewares::wol())
 		.use(Middlewares::notFound404());
 	wolHandler = new WoLHandler(broadcastAddress);

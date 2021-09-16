@@ -25,6 +25,14 @@ namespace EEPROMStorage {
 		User(String username = "", String password = "", EEPROMStorage::UserPermissions permissions = EEPROMStorage::UserPermissions::USER);
 	};
 	
+	struct UserMetadata {
+		byte id;
+		char username[9];
+		UserPermissions permissions;
+
+		UserMetadata(byte id, const char username[], EEPROMStorage::UserPermissions permissions);
+	};
+	
 	void initStorage(byte userAmount);
 	byte readRawStorage(int address);
 	byte getUsersAmount();
