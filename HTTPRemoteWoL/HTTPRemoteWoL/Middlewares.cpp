@@ -18,6 +18,12 @@ extern WoLHandler* wolHandler;
 const char ASTERIX[] PROGMEM = "*";
 const char HTML_BEGIN[] PROGMEM = "<!DOCTYPE HTML><html><head><title>OwO</title></head><body>";
 const char HTML_END[] PROGMEM = "</body></html>";
+const char FORBIDDEN[] PROGMEM = "Forbidden";
+namespace CONTENT_TYPE {
+	const char TEXT_PLAIN[] PROGMEM = "Content-Type: text/plain";
+	const char TEXT_HTML[] PROGMEM = "Content-Type: text/html";
+	const char JSON[] PROGMEM = "Content-Type: application/json";
+}
 
 HttpMiddleware* Middlewares::auth() {
 	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>::getString(ASTERIX), [](HTTPRequest& request) -> HTTPResponse* {
@@ -42,7 +48,7 @@ HttpMiddleware* Middlewares::auth() {
 					}
 				}
 				delete credentials;
-				return new HTTPResponse({403, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/plain"))()}, 1, new String(FlashStorage<char>(PSTR("Forbidden"))())});
+				return new HTTPResponse({403, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(FORBIDDEN))});
 			}
 			delete autho;
 			return new HTTPResponse({406, new String[2] {FlashStorage<char>(PSTR("WWW-Authenticate: Basic realm=\"Authorization needed\""))(),
@@ -57,11 +63,59 @@ HttpMiddleware* Middlewares::auth() {
 HttpMiddleware* Middlewares::homePage() {
 	return new HttpMiddleware {HTTPMethods::GET, FlashStorage<char>(PSTR("/"))(), [](HTTPRequest& request) -> HTTPResponse* {
 		auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
-		*resultBody += "<h1>Hello ";
+		*resultBody += FlashStorage<char>(PSTR("<h1>Hello "))();
 		*resultBody += String(reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->username);
-		*resultBody += "</h1>";
+		*resultBody += FlashStorage<char>(PSTR("</h1>"))();
+		if (reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN)
+			*resultBody += FlashStorage<char>(PSTR("<a href=\"/users\">Menage Users</a>"))();
 		*resultBody += FlashStorage<char>::getString(HTML_END);
-		return new HTTPResponse {200, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/html"))()}, 1, resultBody};
+		return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+	}};
+}
+
+HttpMiddleware* Middlewares::users() {
+	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>(PSTR("/users"))(), [](HTTPRequest& request) -> HTTPResponse* {
+		if (reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN) {
+			if (request.method == HTTPMethods::GET) {
+				auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+				*resultBody += FlashStorage<char>(PSTR("<h3>User amount: "))();
+				*resultBody += String(EEPROMStorage::getUsersAmount());
+				*resultBody += FlashStorage<char>(PSTR("</h3>"))();
+				*resultBody += FlashStorage<char>(PSTR("<form action=\"/users\" method=\"POST\">"))();
+				*resultBody += FlashStorage<char>(PSTR("<label>Username</label>"))();
+				*resultBody += FlashStorage<char>(PSTR("<input type=\"text\" name=\"name\" required>"))();
+				*resultBody += FlashStorage<char>(PSTR("<label>Password</label>"))();
+				*resultBody += FlashStorage<char>(PSTR("<input type=\"password\" name=\"password\" required>"))();
+				*resultBody += FlashStorage<char>(PSTR("<label>Permission Level</label>"))();
+				*resultBody += FlashStorage<char>(PSTR("<select name=\"permissions\" required>"))();
+				*resultBody += FlashStorage<char>(PSTR("<option value=\"USER\">USER</option>"))();
+				*resultBody += FlashStorage<char>(PSTR("<option value=\"ADMIN\">ADMIN</option>"))();
+				*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" value=\"Save\">"))();
+				*resultBody += FlashStorage<char>(PSTR("</form>"))();
+				*resultBody += FlashStorage<char>::getString(HTML_END);
+				return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+			} else if (request.method == HTTPMethods::POST) {
+				auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+				*resultBody += FlashStorage<char>(PSTR("<h3>User added"))();
+				*resultBody += FlashStorage<char>::getString(HTML_END);
+				auto params = Utilities::split(*request.body, "&");
+				if (params->amount == 3) {
+					// TODO: Create request structure checks
+					Utilities::SplittedString* parsedParams[] = {Utilities::split(params->strings[0], "="), Utilities::split(params->strings[1], "="), Utilities::split(params->strings[2], "=")};
+					delete params;
+					auto result = EEPROMStorage::pushUser(EEPROMStorage::User(parsedParams[0]->strings[1], parsedParams[1]->strings[1], 
+											parsedParams[2]->strings[1] == "ADMIN" ? EEPROMStorage::UserPermissions::ADMIN :EEPROMStorage::UserPermissions::USER));
+					delete parsedParams[0];
+					delete parsedParams[1];
+					delete parsedParams[2];
+					if (result) return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+					else return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>(PSTR("Error while adding new user"))())};
+				} else {
+					delete params;
+					return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>(PSTR("Invalid request body"))())};
+				}
+			} else return nullptr;
+		} else return new HTTPResponse {403, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(FORBIDDEN))};
 	}};
 }
 
@@ -114,19 +168,19 @@ HttpMiddleware* Middlewares::debugPage() {
 		*resultBody += String(static_cast<byte>(reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions));
 		*resultBody += FlashStorage<char>(PSTR("</h4>"))();
 		*resultBody += FlashStorage<char>::getString(HTML_END);
-		return new HTTPResponse {200, new String[1] {FlashStorage<char>(PSTR("Content-Type: text/html"))()}, 1, resultBody};
+		return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
 	}};
 }
 
 HttpMiddleware* Middlewares::wol() {
 	return new HttpMiddleware {HTTPMethods::GET, FlashStorage<char>(PSTR("/wol"))(), [](HTTPRequest& request) -> HTTPResponse* {
 		sendMagicPacket(*wolHandler, woLaddressesList[0]);
-		return new HTTPResponse {200, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Magic Packet Status\": \"Sended\" }"))())};
+		return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::JSON)}, 1, new String(FlashStorage<char>(PSTR("{ \"Magic Packet Status\": \"Sended\" }"))())};
 	}};
 }
 
 HttpMiddleware* Middlewares::notFound404() {
 	return new HttpMiddleware {HTTPMethods::ALL, FlashStorage<char>::getString(ASTERIX), [](HTTPRequest& request) -> HTTPResponse* {
-		return new HTTPResponse {404, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 404 }"))())};
+		return new HTTPResponse {404, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::JSON)}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 404 }"))())};
 	}};
 }

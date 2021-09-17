@@ -48,3 +48,13 @@ EEPROMStorage::User* EEPROMStorage::getUserCredentials(byte userId) {
 	EEPROM.get(!userId ? sizeof(byte) : sizeof(byte) + (userId * sizeof(EEPROMStorage::User)), *user);
 	return user;
 }
+
+bool EEPROMStorage::pushUser(const EEPROMStorage::User& user) {
+	for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
+		if (EEPROM.read(sizeof(byte) + (i * sizeof(EEPROMStorage::User))) == '\0') {
+			EEPROM.put(sizeof(byte) + (i * sizeof(EEPROMStorage::User)), user);
+			return true;
+		}
+	}
+	return false;
+}

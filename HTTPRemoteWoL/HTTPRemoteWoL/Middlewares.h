@@ -13,6 +13,7 @@
 namespace Middlewares {
 	HttpMiddleware* auth();
 	HttpMiddleware* homePage();
+	HttpMiddleware* users();
 	HttpMiddleware* debugPage();
 	HttpMiddleware* wol();
 	

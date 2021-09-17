@@ -37,6 +37,7 @@ namespace EEPROMStorage {
 	byte readRawStorage(int address);
 	byte getUsersAmount();
 	EEPROMStorage::User* getUserCredentials(byte userId);
+	bool pushUser(const EEPROMStorage::User& user);
 }
 
 #endif //__STORAGE_H__
