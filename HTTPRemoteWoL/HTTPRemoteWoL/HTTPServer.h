@@ -31,15 +31,17 @@ struct HTTPHeaders {
 	IPAddress ip;
 };
 
+class HTTPSendResponse;
 struct HTTPRequest {
 	String* url;
 	HTTPMethods method;
 	HTTPHeaders* headers;
 	String* body;
 	void* data;
-	HTTPRequest(String* url = nullptr, HTTPMethods method = HTTPMethods::GET, HTTPHeaders* headers = nullptr, String* body = nullptr, void* data = nullptr, bool deleteBody = true);
+	HTTPSendResponse* send;
+	HTTPRequest(String* url = nullptr, HTTPMethods method = HTTPMethods::GET, HTTPHeaders* headers = nullptr, String* body = nullptr, void* data = nullptr, HTTPSendResponse* send = nullptr, bool deleteBody = true);
 	~HTTPRequest();
-private:
+	private:
 	bool deleteBody;
 };
 
@@ -50,7 +52,7 @@ struct HTTPResponse {
 	String* body;
 	HTTPResponse(int statusCode = 500, String* headers = nullptr, int headersCount = 0, String* body = nullptr, bool deleteBody = true);
 	~HTTPResponse();
-private:
+	private:
 	bool deleteBody;
 };
 
@@ -58,6 +60,18 @@ struct HttpMiddleware {
 	HTTPMethods method;
 	String url;
 	HTTPResponse* (*middleware)(HTTPRequest& request);
+};
+
+class HTTPSendResponse {
+private:
+	bool isBegin;
+	EthernetClient& client;
+	
+public:
+	HTTPSendResponse(EthernetClient& client);
+	~HTTPSendResponse() = default;
+	
+	void push(HTTPResponse* response, String* body = nullptr);
 };
 
 class HTTPServer {
