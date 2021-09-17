@@ -65,10 +65,10 @@ struct HttpMiddleware {
 class HTTPSendResponse {
 private:
 	bool isBegin;
-	EthernetClient& client;
+	EthernetClient* client;
 	
 public:
-	HTTPSendResponse(EthernetClient& client);
+	HTTPSendResponse(EthernetClient* client);
 	~HTTPSendResponse() = default;
 	
 	void push(HTTPResponse* response, String* body = nullptr);

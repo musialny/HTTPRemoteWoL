@@ -136,7 +136,8 @@ HttpMiddleware* Middlewares::users() {
 				if (params->amount == 3) {
 					Utilities::SplittedString* parsedParams[] = {Utilities::split(params->strings[0], "="), Utilities::split(params->strings[1], "="), Utilities::split(params->strings[2], "=")};
 					delete params;
-					if (!(parsedParams[0]->strings[0] == FlashStorage<char>(PSTR("name"))() && 
+					if (!(parsedParams[0]->amount == 2 && parsedParams[1]->amount == 2 && parsedParams[2]->amount == 2) && 
+						!(parsedParams[0]->strings[0] == FlashStorage<char>(PSTR("name"))() && 
 						parsedParams[1]->strings[0] == FlashStorage<char>(PSTR("password"))() && 
 						parsedParams[2]->strings[0] == FlashStorage<char>(PSTR("permissions"))() &&
 						parsedParams[0]->strings[1].length() > 1 &&
