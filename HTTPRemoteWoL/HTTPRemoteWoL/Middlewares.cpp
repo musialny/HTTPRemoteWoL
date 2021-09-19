@@ -19,7 +19,7 @@ const char ASTERIX[] PROGMEM = "*";
 const char HTML_BEGIN[] PROGMEM = "<!DOCTYPE HTML><html><head><title>Control Panel</title></head><body>";
 const char HTML_END[] PROGMEM = "</body></html>";
 const char FORBIDDEN[] PROGMEM = "Forbidden";
-const char INVALID_BODY[] PROGMEM = "Invalid request body";
+const char INVALID_REQUEST[] PROGMEM = "Invalid request";
 namespace CONTENT_TYPE {
 	const char TEXT_PLAIN[] PROGMEM = "Content-Type: text/plain";
 	const char TEXT_HTML[] PROGMEM = "Content-Type: text/html";
@@ -102,21 +102,21 @@ HttpMiddleware* Middlewares::users() {
 					auto user = EEPROMStorage::getUserCredentials(i);
 					if (*user->username != '\0') {
 						registeredUsers++;
-						*resultBody += FlashStorage<char>(PSTR("<form action=\"/users\" method=\"DELETE\">"))();
+						*resultBody += FlashStorage<char>(PSTR("<form action=\"/users\" method=\"POST\">"))();
 						*resultBody += FlashStorage<char>(PSTR("<label> ID: "))();
 						*resultBody += String(i);
 						*resultBody += FlashStorage<char>(PSTR(" | Username: "))();
-						byte o = 0;
-						while (user->username[o] != '\0' && o < sizeof(user->username)) {
+						for (byte o = 0; o < sizeof(user->username); o++) {
+							if (user->username[o] == '\0') break;
 							*resultBody += user->username[o];
-							o++;
 						}
 						*resultBody += FlashStorage<char>(PSTR(" | Permission Level: "))();
 						*resultBody += String(static_cast<byte>(user->permissions));
 						*resultBody += FlashStorage<char>(PSTR(" </label>"))();
-						*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" name=\"ID\" value=\"Delete ID: "))();
+						*resultBody += FlashStorage<char>(PSTR("<input type=\"hidden\" name=\"id\" value=\""))();
 						*resultBody += String(i);
 						*resultBody += FlashStorage<char>(PSTR("\">"))();
+						*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" value=\"Delete\">"))();
 						*resultBody += FlashStorage<char>(PSTR("</form>"))();
 						request.send->push(nullptr, resultBody);
 						*resultBody = "";
@@ -129,16 +129,13 @@ HttpMiddleware* Middlewares::users() {
 				*resultBody += FlashStorage<char>::getString(HTML_END);
 				return new HTTPResponse {0, nullptr, 0, resultBody};
 			} else if (request.method == HTTPMethods::POST) {
-				auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
-				*resultBody += FlashStorage<char>(PSTR("<h3>User added</h3><a href=\"/users\">Back</a>"))();
-				*resultBody += FlashStorage<char>::getString(HTML_END);
 				auto params = Utilities::split(*request.body, "&");
 				if (params->amount == 3) {
 					Utilities::SplittedString* parsedParams[] = {Utilities::split(params->strings[0], "="), Utilities::split(params->strings[1], "="), Utilities::split(params->strings[2], "=")};
 					delete params;
-					if (!(parsedParams[0]->amount == 2 && parsedParams[1]->amount == 2 && parsedParams[2]->amount == 2) && 
-						!(parsedParams[0]->strings[0] == FlashStorage<char>(PSTR("name"))() && 
-						parsedParams[1]->strings[0] == FlashStorage<char>(PSTR("password"))() && 
+					if (!(parsedParams[0]->amount == 2 && parsedParams[1]->amount == 2 && parsedParams[2]->amount == 2) &&
+						!(parsedParams[0]->strings[0] == FlashStorage<char>(PSTR("name"))() &&
+						parsedParams[1]->strings[0] == FlashStorage<char>(PSTR("password"))() &&
 						parsedParams[2]->strings[0] == FlashStorage<char>(PSTR("permissions"))() &&
 						parsedParams[0]->strings[1].length() > 1 &&
 						parsedParams[1]->strings[1].length() > 1 &&
@@ -146,18 +143,40 @@ HttpMiddleware* Middlewares::users() {
 							delete parsedParams[0];
 							delete parsedParams[1];
 							delete parsedParams[2];
-							return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_BODY))};
-						}
+							return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+					}
 					bool result = EEPROMStorage::pushUser(EEPROMStorage::User(parsedParams[0]->strings[1], parsedParams[1]->strings[1], 
-											parsedParams[2]->strings[1] == "ADMIN" ? EEPROMStorage::UserPermissions::ADMIN : EEPROMStorage::UserPermissions::USER));
+											parsedParams[2]->strings[1] == FlashStorage<char>(PSTR("ADMIN"))() ? EEPROMStorage::UserPermissions::ADMIN : EEPROMStorage::UserPermissions::USER));
 					delete parsedParams[0];
 					delete parsedParams[1];
 					delete parsedParams[2];
-					if (result) return new HTTPResponse {303, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
-					else return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>(PSTR("Error while adding new user"))())};
+					auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+					*resultBody += FlashStorage<char>(PSTR("<h3>User added</h3><a href=\"/users\">Back</a>"))();
+					*resultBody += FlashStorage<char>::getString(HTML_END);
+					if (result) return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+					else {
+						delete resultBody;
+						return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>(PSTR("Error while adding new user"))())};
+					}
+				} else if (params->amount == 0) {
+					delete params;
+					auto parsedParam = Utilities::split(*request.body, "=");
+					if (parsedParam->amount == 2 && parsedParam->strings[0] == FlashStorage<char>(PSTR("id"))() && parsedParam->strings[1].length() > 0) {
+						byte id = atoi(parsedParam->strings[1].c_str());
+						delete parsedParam;
+						if (id < EEPROMStorage::getUsersAmount() && EEPROMStorage::removeUser(id)) {
+							auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+							*resultBody += FlashStorage<char>(PSTR("<h3>User removed</h3><a href=\"/users\">Back</a>"))();
+							*resultBody += FlashStorage<char>::getString(HTML_END);
+							return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+						} else return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>(PSTR("Error while removing user"))())};
+					} else {
+						delete parsedParam;
+						return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+					}
 				} else {
 					delete params;
-					return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_BODY))};
+					return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
 				}
 			} else return nullptr;
 		} else return new HTTPResponse {403, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(FORBIDDEN))};

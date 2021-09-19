@@ -49,6 +49,10 @@ EEPROMStorage::User* EEPROMStorage::getUserCredentials(byte userId) {
 	return user;
 }
 
+EEPROMStorage::UserPermissions EEPROMStorage::getUserPermissions(byte userId) {
+	return static_cast<EEPROMStorage::UserPermissions>(EEPROM.read((userId + 1) * sizeof(EEPROMStorage::User)));
+}
+
 bool EEPROMStorage::pushUser(const EEPROMStorage::User& user) {
 	for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 		if (EEPROM.read(sizeof(byte) + (i * sizeof(EEPROMStorage::User))) == '\0') {
@@ -57,4 +61,19 @@ bool EEPROMStorage::pushUser(const EEPROMStorage::User& user) {
 		}
 	}
 	return false;
+}
+
+bool EEPROMStorage::removeUser(byte id) {
+	auto userPerms = EEPROMStorage::getUserPermissions(id);
+	if (userPerms == UserPermissions::ADMIN) {
+		byte admins = 0;
+		for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
+			userPerms = EEPROMStorage::getUserPermissions(i);
+			if (userPerms == UserPermissions::ADMIN) admins++;
+			if (admins > 1) break;
+		}
+		if (admins < 2) return false;
+	}
+	EEPROM.put(!id ? sizeof(byte) : sizeof(byte) + (id * sizeof(EEPROMStorage::User)), EEPROMStorage::User());
+	return true;
 }

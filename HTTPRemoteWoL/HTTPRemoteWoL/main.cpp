@@ -17,13 +17,9 @@ void setup() {
 	Serial.println(FlashStorage<char>(PSTR("[Serial Port Inited]\n"))());*/
 	
 	// for (int i = 0; i < 1024; i++) EEPROM.write(i, 255);
-	EEPROMStorage::initStorage(5);
+	EEPROMStorage::initStorage(10);
 	
-	/*auto res = Utilities::decodeBASE64("YWRtaW46YWRtaW5hZG1pbg==");
-	Serial.println(*res);
-	delete res;
-	
-	for (int i = 0; i < 1024; i++) {
+	/*for (int i = 0; i < 1024; i++) {
 		char result = EEPROMStorage::readRawStorage(i);
 		if (result != 255)
 			Serial.print(String(static_cast<byte>(result)) + "|");

@@ -34,27 +34,26 @@ HTTPResponse::~HTTPResponse() {
 	}
 }
 
-HTTPSendResponse::HTTPSendResponse(EthernetClient* client) : client(client) {}
+HTTPSendResponse::HTTPSendResponse(EthernetClient& client) : client(client) {
+	this->isBegin = false;
+}
 	
 void HTTPSendResponse::push(HTTPResponse* response, String* body) {
 	if (response != nullptr) {
 		if (!isBegin) {
-			client->println("HTTP/1.1 " + String(response->statusCode) + " OK");
+			client.println("HTTP/1.1 " + String(response->statusCode) + " OK");
 			for (int i = 0; i < response->headersCount; i++)
-			client->println(response->headers[i]);
-			client->println(FlashStorage<char>(PSTR("X-Powered-By: musialny.dev"))());
-			client->println(FlashStorage<char>(PSTR("Connection: close"))());
-			client->println();
+				client.println(response->headers[i]);
+			client.println(FlashStorage<char>(PSTR("X-Powered-By: musialny.dev"))());
+			client.println(FlashStorage<char>(PSTR("Connection: close"))());
+			client.println();
 			isBegin = true;
 		}
-		client->println(*response->body);
-	} else {
-		if (body == nullptr) client->println();
-		else client->println(*body);
-	}
+		client.print(*response->body);
+	} else if (body != nullptr) client.print(*body);
 }
 
-HTTPServer::HTTPServer(const byte deviceMacAddress[6], const IPAddress& ip, int port) {
+HTTPServer::HTTPServer(const byte deviceMacAddress[], const IPAddress& ip, int port) {
 	this->middlewares = new ElasticArray<const HttpMiddleware*>;
 	this->server = new EthernetServer(port);
 	Ethernet.begin(const_cast<byte*>(deviceMacAddress), ip);
@@ -95,8 +94,11 @@ Metadata* parseMetadata(const String& requestLine) {
 	if (split->strings[0] == String("GET")) result->method = HTTPMethods::GET;
 	else if (split->strings[0] == String("POST")) result->method = HTTPMethods::POST;
 	else if (split->strings[0] == String("DELETE")) result->method = HTTPMethods::DELETE;
-	result->url = split->strings[1];
+	auto url = Utilities::split(split->strings[1], "?");
+	if (url->amount) result->url = url->strings[0];
+	else result->url = split->strings[1];
 	delete split;
+	delete url;
 	return result;
 }
 
@@ -123,7 +125,7 @@ void parseHeaders(HTTPHeaders* headers, const String& requestLine) {
 void HTTPServer::listen() {
 	auto client = server->available();
 	if (client) {
-		HTTPSendResponse send(&client);
+		HTTPSendResponse send(client);
 		auto rawRequestLine = new String;
 		int parsingStage = 0;
 		Metadata* metadata = nullptr;
