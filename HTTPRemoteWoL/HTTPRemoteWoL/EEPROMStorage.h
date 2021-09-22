@@ -47,6 +47,7 @@ namespace EEPROMStorage {
 	byte readRawStorage(int address);
 	byte getUsersAmount();
 	byte getMacAddressesAmount();
+	bool isMacAddressExists(byte id);
 	void removeNearestMacAddress(byte id);
 	EEPROMStorage::Mac* getNearestMacAddress(byte id);
 	EEPROMStorage::Mac* getMacAddress(byte id);

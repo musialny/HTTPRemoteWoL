@@ -16,18 +16,19 @@ WoLHandler* wolHandler;
 HTTPServer* httpServer;
 
 void setup() {
-	/*Serial.begin(9600); 
+	/*Serial.begin(9600);
 	Serial.println(FlashStorage<char>(PSTR("[Serial Port Inited]\n"))());*/
 	
 	// for (int i = 0; i < 1024; i++) EEPROM.write(i, 255);
-	EEPROMStorage::initStorage(10, woLDefaultAddressList, woLDefaultAddressListAmount);
+
+	EEPROMStorage::initStorage(20, woLDefaultAddressList, woLDefaultAddressListAmount);
 	
 	/*for (int i = 0; i < 1024; i++) {
 		char result = EEPROMStorage::readRawStorage(i);
 		// if (result != 255)
 			Serial.print(String(static_cast<byte>(result)) + "|");
 	}
-	Serial.print("\r");
+	Serial.println();
 	for (int i = 0; i < 1024; i++) {
 		char result = EEPROMStorage::readRawStorage(i);
 		if (result != 255)

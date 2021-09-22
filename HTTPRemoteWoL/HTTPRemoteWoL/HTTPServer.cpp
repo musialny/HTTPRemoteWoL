@@ -69,7 +69,7 @@ HTTPServer::HTTPServer(const byte deviceMacAddress[], const IPAddress& ip, int p
 			digitalWrite(STATUS_PIN, HIGH);
 			statusLedState = true;
 			delay(500);
-			} else {
+		} else {
 			digitalWrite(STATUS_PIN, LOW);
 			statusLedState = false;
 			delay(500);

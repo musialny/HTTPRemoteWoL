@@ -63,13 +63,11 @@ int EEPROMStorage::Mac::saveToEEPROM() {
 		return 1;
 	} else {
 		for (byte i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
-			auto mac = EEPROMStorage::getMacAddress(i);
-			if (mac == nullptr) {
+			if (!EEPROMStorage::isMacAddressExists(i)) {
 				save(0, data, this->permissionsSize);
 				delete[] data;
 				return i;
 			}
-			delete mac;
 		}
 		save(EEPROMStorage::getMacAddressesAmount(), data, this->permissionsSize);
 		delete[] data;
@@ -106,25 +104,36 @@ byte EEPROMStorage::getMacAddressesAmount() {
 	return EEPROM.read(sizeof(byte) + (EEPROMStorage::getUsersAmount() * sizeof(EEPROMStorage::User)));
 }
 
+bool EEPROMStorage::isMacAddressExists(byte id) {
+	int address = MAC_DATA_TABLE_DATA_BEGIN(id);
+	byte checksumSize = Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount());
+	byte incrementator = 0;
+	for (byte i = 0; i < checksumSize; i++)
+		if (EEPROM.read(address + i) == 0) incrementator++;
+	if (incrementator == checksumSize) return false;
+	else return true;
+}
+
 void EEPROMStorage::removeNearestMacAddress(byte id) {
-	int address;
 	for (int i = 0; i < MAC_ALLOCATION_TABLE_MAX_SIZE; i++) {
-		address = MAC_DATA_TABLE_DATA_BEGIN(id++);
-		if (EEPROM.read(address) > 0) break;
+		if (EEPROMStorage::isMacAddressExists(id)) break;
+		id++;
 		if (i == MAC_ALLOCATION_TABLE_MAX_SIZE - 1) return;
 	}
-	EEPROM.write(address, 0);
+	int address = MAC_DATA_TABLE_DATA_BEGIN(id);
+	for (byte i = 0; i < Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount()); i++)
+		EEPROM.write(address + i, 0);
 	byte buffer = EEPROMStorage::getMacAddressesAmount();
 	EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, !buffer ? 0 : buffer - 1);
 }
 
 EEPROMStorage::Mac* EEPROMStorage::getNearestMacAddress(byte id) {
-	int address;
 	for (int i = 0; i < MAC_ALLOCATION_TABLE_MAX_SIZE; i++) {
-		address = MAC_DATA_TABLE_DATA_BEGIN(id++);
-		if (EEPROM.read(address) > 0) break;
+		if (EEPROMStorage::isMacAddressExists(id)) break;
+		id++;
 		if (i == MAC_ALLOCATION_TABLE_MAX_SIZE - 1) return nullptr;
 	}
+	int address = MAC_DATA_TABLE_DATA_BEGIN(id);
 	int allocSize = Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount());
 	auto permissions = new byte[allocSize];
 	for (int i = 0; i < allocSize; i++) 
@@ -136,8 +145,8 @@ EEPROMStorage::Mac* EEPROMStorage::getNearestMacAddress(byte id) {
 }
 
 EEPROMStorage::Mac* EEPROMStorage::getMacAddress(byte id) {
+	if (!EEPROMStorage::isMacAddressExists(id)) return nullptr;
 	int address = MAC_DATA_TABLE_DATA_BEGIN(id);
-	if (EEPROM.read(address) < 1) return nullptr;
 	int allocSize = Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount());
 	auto permissions = new byte[allocSize];
 	for (int i = 0; i < allocSize; i++)
