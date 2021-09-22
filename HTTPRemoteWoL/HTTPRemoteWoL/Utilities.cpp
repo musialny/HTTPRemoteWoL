@@ -52,7 +52,7 @@ Utilities::SplittedString* Utilities::split(const String& value, const String& s
 	return result;
 }
 
-Utilities::SplittedString* Utilities::split(const String& value, int maxStringSize) {
+/*Utilities::SplittedString* Utilities::split(const String& value, int maxStringSize) {
 	auto result = new Utilities::SplittedString;
 	result->amount = value.length() / maxStringSize + (value.length() % maxStringSize ? 1 : 0);
 	result->strings = new String[result->amount];
@@ -62,7 +62,7 @@ Utilities::SplittedString* Utilities::split(const String& value, int maxStringSi
 		result->strings[resultAmountCounter] += value.charAt(i);
 	}
 	return result;
-}
+}*/
 
 String* Utilities::decodeBASE64(const String& value, size_t inputShrink) {
 	auto result = new String;
@@ -101,4 +101,13 @@ bool Utilities::compareFixedSizeArray(const String& value, const char fixedSizeA
 		}
 	} else return false;
 	return true;
+}
+
+int Utilities::calculateBitFieldsAllocation(int bits) {
+	int result = 0;
+	while(bits > 0) {
+		result++;
+		bits -= 8;
+	}
+	return result;
 }

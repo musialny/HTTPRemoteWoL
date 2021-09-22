@@ -33,9 +33,23 @@ namespace EEPROMStorage {
 		UserMetadata(byte id, const char username[], EEPROMStorage::UserPermissions permissions);
 	};
 	
-	void initStorage(byte userAmount);
+	struct Mac {
+		byte address[6];
+		byte* permissions;
+		int permissionsSize;
+
+		Mac(const byte address[6], const byte* permissions);
+		~Mac();
+		int saveToEEPROM();
+	};
+	
+	void initStorage(byte userAmount, const byte woLDefaultAddressList[][6], int woLDefaultAddressListAmount);
 	byte readRawStorage(int address);
 	byte getUsersAmount();
+	byte getMacAddressesAmount();
+	void removeNearestMacAddress(byte id);
+	EEPROMStorage::Mac* getNearestMacAddress(byte id);
+	EEPROMStorage::Mac* getMacAddress(byte id);
 	EEPROMStorage::User* getUserCredentials(byte userId);
 	EEPROMStorage::UserPermissions getUserPermissions(byte userId);
 	bool pushUser(const EEPROMStorage::User& user);
