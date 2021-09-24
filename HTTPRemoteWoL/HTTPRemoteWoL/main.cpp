@@ -16,14 +16,14 @@ WoLHandler* wolHandler;
 HTTPServer* httpServer;
 
 void setup() {
-	/*Serial.begin(9600);
-	Serial.println(FlashStorage<char>(PSTR("[Serial Port Inited]\n"))());*/
+	Serial.begin(9600);
+	Serial.println(FlashStorage<char>(PSTR("[Serial Port Inited]\n"))());
 	
-	// for (int i = 0; i < 1024; i++) EEPROM.write(i, 255);
+	// for (int i = 0; i < 8 * 1024; i++) EEPROM.write(i, 255);
 
 	EEPROMStorage::initStorage(20, woLDefaultAddressList, woLDefaultAddressListAmount);
 	
-	/*for (int i = 0; i < 1024; i++) {
+	for (int i = 0; i < 1024; i++) {
 		char result = EEPROMStorage::readRawStorage(i);
 		// if (result != 255)
 			Serial.print(String(static_cast<byte>(result)) + "|");
@@ -48,7 +48,7 @@ void setup() {
 		Serial.print(FlashStorage<char>(PSTR(" | user->permissions = "))() + String(static_cast<byte>(user->permissions)));
 		Serial.println();
 		delete user;
-	}*/
+	}
 	
 	const byte deviceMac[6] = {0xC0, 0x06, 0x42, 0xC4, 0x40, 0x9D};
 	const byte broadcastAddress[4] = { 10, 10, 0, 255 };

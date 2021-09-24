@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.23107.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "HTTPRemoteWoL", "HTTPRemoteWoL\HTTPRemoteWoL\HTTPRemoteWoL.cppproj", "{DCE6C7E3-EE26-4D79-826B-08594B9AD897}"
 EndProject
-Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "ArduinoCore", "HTTPRemoteWoL\ArduinoCore\ArduinoCore.cppproj", "{D28192DD-16DD-464D-B476-1FB0909809AC}"
+Project("{E66E83B9-2572-4076-B26E-6BE79FF3018A}") = "ArduinoCore", "HTTPRemoteWoL\ArduinoCore\ArduinoCore.cppproj", "{0AC77ED3-2B78-470D-9233-37B14278CC5A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,10 +17,10 @@ Global
 		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Debug|AVR.Build.0 = Debug|AVR
 		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Release|AVR.ActiveCfg = Release|AVR
 		{DCE6C7E3-EE26-4D79-826B-08594B9AD897}.Release|AVR.Build.0 = Release|AVR
-		{D28192DD-16DD-464D-B476-1FB0909809AC}.Debug|AVR.ActiveCfg = Debug|AVR
-		{D28192DD-16DD-464D-B476-1FB0909809AC}.Debug|AVR.Build.0 = Debug|AVR
-		{D28192DD-16DD-464D-B476-1FB0909809AC}.Release|AVR.ActiveCfg = Release|AVR
-		{D28192DD-16DD-464D-B476-1FB0909809AC}.Release|AVR.Build.0 = Release|AVR
+		{0AC77ED3-2B78-470D-9233-37B14278CC5A}.Debug|AVR.ActiveCfg = Debug|AVR
+		{0AC77ED3-2B78-470D-9233-37B14278CC5A}.Debug|AVR.Build.0 = Debug|AVR
+		{0AC77ED3-2B78-470D-9233-37B14278CC5A}.Release|AVR.ActiveCfg = Release|AVR
+		{0AC77ED3-2B78-470D-9233-37B14278CC5A}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
