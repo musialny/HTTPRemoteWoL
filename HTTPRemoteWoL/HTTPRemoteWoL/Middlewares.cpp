@@ -106,6 +106,23 @@ HttpMiddleware* Middlewares::homePage() {
 			request.send->push(nullptr, resultBody);
 			*resultBody = "";
 		}
+		for (int i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
+			auto mac = EEPROMStorage::getNearestMacAddress(i);
+			if (mac != nullptr) {
+				*resultBody += FlashStorage<char>(PSTR("<p>ID: "))();
+				*resultBody += String(i);
+				*resultBody += FlashStorage<char>(PSTR(" | MAC Address: "))();
+				for (byte o = 0; o < sizeof(mac->address); o++) {
+					char hex[3];
+					sprintf(hex, "%X", mac->address[o]);
+					*resultBody += hex + (o < (sizeof(mac->address) - 1) ? ":" : String());
+				}
+				delete mac;
+				*resultBody += FlashStorage<char>(PSTR("</p>"))();
+				request.send->push(nullptr, resultBody);
+				*resultBody = "";
+			}
+		}
 		*resultBody += FlashStorage<char>::getString(HTML_END);
 		return new HTTPResponse {0, nullptr, 0, resultBody};
 	}};
