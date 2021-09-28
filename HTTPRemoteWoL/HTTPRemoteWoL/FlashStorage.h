@@ -41,6 +41,12 @@ public:
 		return this->result;
 	}
 	
+	String& getString() {
+		for (int i = 0; pgm_read_byte(this->flashMemoryPointer + i); i++)
+			this->result += static_cast<char>(pgm_read_byte(this->flashMemoryPointer + i));
+		return this->result;
+	}
+	
 	static String getString(const char* flashMemoryPointer) {
 		String result;
 		for (int i = 0; pgm_read_byte(flashMemoryPointer + i); i++)

@@ -15,7 +15,7 @@ constexpr const int MAC_ALLOCATION_TABLE_MAX_SIZE = 50;
 	
 #define MAC_DATA_TABLE_AMOUNT_BEGIN (sizeof(byte) + (EEPROMStorage::getUsersAmount() * sizeof(EEPROMStorage::User)))
 #define MAC_DATA_TABLE_DATA_BEGIN(x) ((2 * sizeof(byte)) + (EEPROMStorage::getUsersAmount() * sizeof(EEPROMStorage::User)) + \
-									 (x * (sizeof(EEPROMStorage::Mac::address) + Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount()))))
+									 (x * (sizeof(EEPROMStorage::Mac::address) + sizeof(EEPROMStorage::Mac::name) + Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount()))))
 
 EEPROMStorage::User::User(String username, String password, UserPermissions permissions) : permissions(permissions) {
 	for (int i = 0; i < sizeof(this->username); i++) {
@@ -33,13 +33,15 @@ EEPROMStorage::UserMetadata::UserMetadata(byte id, const char username[], EEPROM
 	this->username[sizeof(this->username) - 1] = '\0';
 }
 
-EEPROMStorage::Mac::Mac(const byte address[], const byte* permissions) {
+EEPROMStorage::Mac::Mac(const byte address[], const char name[], const byte* permissions) {
 	this->permissionsSize = Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount());
 	this->permissions = new byte[this->permissionsSize];
 	for (byte i = 0; i < sizeof(this->address); i++)
 		this->address[i] = address[i];
 	for (byte i = 0; i < this->permissionsSize; i++)
 		this->permissions[i] = permissions[i];
+	for (byte i = 0; i < sizeof(this->name); i++)
+		this->name[i] = name[i];
 }
 
 EEPROMStorage::Mac::~Mac() {
@@ -47,37 +49,41 @@ EEPROMStorage::Mac::~Mac() {
 }
 
 int EEPROMStorage::Mac::saveToEEPROM() {
-	auto save = [](byte i, byte* data, int permissionsSize) -> void {
-		for (byte o = 0; o < sizeof(EEPROMStorage::Mac::address) + permissionsSize; o++)
-			EEPROM.write(MAC_DATA_TABLE_DATA_BEGIN(i) + o, data[o]);
-		EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, EEPROMStorage::getMacAddressesAmount() + 1);
-	};
-	byte* data = reinterpret_cast<byte*>(malloc(sizeof(this->address) + this->permissionsSize));
-	for (byte i = 0; i < this->permissionsSize; i++)
-		data[i] = this->permissions[i];
-	for (byte i = 0; i < sizeof(this->address); i++)
-		data[i + this->permissionsSize] = this->address[i];
-	if (!EEPROMStorage::getMacAddressesAmount()) {
-		save(0, data, this->permissionsSize);
-		delete[] data;
-		return 1;
-	} else {
-		for (byte i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
-			if (!EEPROMStorage::isMacAddressExists(i)) {
-				save(0, data, this->permissionsSize);
-				delete[] data;
-				return i;
+	if (EEPROMStorage::getMacAddressesAmount() < MAC_ALLOCATION_TABLE_MAX_SIZE) {
+		auto save = [](byte i, byte* data, int permissionsSize) -> void {
+			for (byte o = 0; o < sizeof(EEPROMStorage::Mac::address) + sizeof(EEPROMStorage::Mac::name) + permissionsSize; o++)
+				EEPROM.write(MAC_DATA_TABLE_DATA_BEGIN(i) + o, data[o]);
+			EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, EEPROMStorage::getMacAddressesAmount() + 1);
+		};
+		byte* data = reinterpret_cast<byte*>(malloc(sizeof(EEPROMStorage::Mac::address) + sizeof(EEPROMStorage::Mac::name) + this->permissionsSize));
+		for (byte i = 0; i < this->permissionsSize; i++)
+			data[i] = this->permissions[i];
+		for (byte i = 0; i < sizeof(this->address); i++)
+			data[i + this->permissionsSize] = this->address[i];
+		for (byte i = 0; i < sizeof(this->name); i++)
+			data[i + this->permissionsSize + sizeof(this->address)] = this->name[i];
+		if (!EEPROMStorage::getMacAddressesAmount()) {
+			save(0, data, this->permissionsSize);
+			delete[] data;
+			return 1;
+		} else {
+			for (byte i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
+				if (!EEPROMStorage::isMacAddressExists(i)) {
+					save(0, data, this->permissionsSize);
+					delete[] data;
+					return i;
+				}
 			}
+			save(EEPROMStorage::getMacAddressesAmount(), data, this->permissionsSize);
+			delete[] data;
+			return EEPROMStorage::getMacAddressesAmount() - 1;
 		}
-		save(EEPROMStorage::getMacAddressesAmount(), data, this->permissionsSize);
 		delete[] data;
-		return EEPROMStorage::getMacAddressesAmount() - 1;
 	}
-	delete[] data;
 	return -1;
 }
 
-void EEPROMStorage::initStorage(byte userAmount, const byte woLDefaultAddressList[][6], int woLDefaultAddressListAmount) {
+void EEPROMStorage::initStorage(byte userAmount, const byte woLDefaultAddressList[][6], FlashStorage<char> woLDefaultAddressNames[], int woLDefaultAddressListAmount) {
 	if (EEPROM.read(USER_DATA_ADDRESS) == 255) {
 		EEPROM.write(USER_DATA_ADDRESS, userAmount);
 		EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, 0);
@@ -86,8 +92,13 @@ void EEPROMStorage::initStorage(byte userAmount, const byte woLDefaultAddressLis
 					   EEPROMStorage::UserPermissions::ADMIN) : EEPROMStorage::User());
 		auto perms = new byte[Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount())] {};
 		perms[0] = 1;
-		for (int i = 0; i < woLDefaultAddressListAmount; i++)
-			EEPROMStorage::Mac(woLDefaultAddressList[i], perms).saveToEEPROM();
+		for (int i = 0; i < woLDefaultAddressListAmount; i++) {
+			String& nameString = woLDefaultAddressNames[i].getString();
+			char name[12];
+			for (byte o = 0; o < sizeof(name); o++)
+				name[o] = o >= nameString.length() ? '\0' : nameString.charAt(o);
+			EEPROMStorage::Mac(woLDefaultAddressList[i], name, perms).saveToEEPROM();
+		}
 		delete perms;
 	}
 }
@@ -115,16 +126,18 @@ bool EEPROMStorage::isMacAddressExists(byte id) {
 }
 
 void EEPROMStorage::removeNearestMacAddress(byte id) {
-	for (int i = 0; i < MAC_ALLOCATION_TABLE_MAX_SIZE; i++) {
-		if (EEPROMStorage::isMacAddressExists(id)) break;
-		id++;
-		if (i == MAC_ALLOCATION_TABLE_MAX_SIZE - 1) return;
+	if (EEPROMStorage::getMacAddressesAmount()) {
+		for (int i = 0; i < MAC_ALLOCATION_TABLE_MAX_SIZE; i++) {
+			if (EEPROMStorage::isMacAddressExists(id)) break;
+			id++;
+			if (i == MAC_ALLOCATION_TABLE_MAX_SIZE - 1) return;
+		}
+		int address = MAC_DATA_TABLE_DATA_BEGIN(id);
+		for (byte i = 0; i < Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount()); i++)
+			EEPROM.write(address + i, 0);
+		byte buffer = EEPROMStorage::getMacAddressesAmount();
+		EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, !buffer ? 0 : buffer - 1);
 	}
-	int address = MAC_DATA_TABLE_DATA_BEGIN(id);
-	for (byte i = 0; i < Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount()); i++)
-		EEPROM.write(address + i, 0);
-	byte buffer = EEPROMStorage::getMacAddressesAmount();
-	EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, !buffer ? 0 : buffer - 1);
 }
 
 EEPROMStorage::Mac* EEPROMStorage::getNearestMacAddress(byte id) {
@@ -133,15 +146,7 @@ EEPROMStorage::Mac* EEPROMStorage::getNearestMacAddress(byte id) {
 		id++;
 		if (i == MAC_ALLOCATION_TABLE_MAX_SIZE - 1) return nullptr;
 	}
-	int address = MAC_DATA_TABLE_DATA_BEGIN(id);
-	int allocSize = Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount());
-	auto permissions = new byte[allocSize];
-	for (int i = 0; i < allocSize; i++) 
-		permissions[i] = EEPROM.read(address++);
-	byte macAddress[6] = {EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++)};
-	auto result = new EEPROMStorage::Mac(macAddress, permissions);
-	delete[] permissions;
-	return result;
+	return EEPROMStorage::getMacAddress(id);
 }
 
 EEPROMStorage::Mac* EEPROMStorage::getMacAddress(byte id) {
@@ -151,8 +156,12 @@ EEPROMStorage::Mac* EEPROMStorage::getMacAddress(byte id) {
 	auto permissions = new byte[allocSize];
 	for (int i = 0; i < allocSize; i++)
 		permissions[i] = EEPROM.read(address++);
-	byte macAddress[6] = {EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++)};
-	auto result = new EEPROMStorage::Mac(macAddress, permissions);
+	byte macAddress[sizeof(EEPROMStorage::Mac::address)] = {EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++),
+															EEPROM.read(address++), EEPROM.read(address++), EEPROM.read(address++)};
+	char macName[sizeof(EEPROMStorage::Mac::name)];
+	for (byte i = 0; i < sizeof(EEPROMStorage::Mac::name); i++)
+		macName[i] = EEPROM.read(address++);
+	auto result = new EEPROMStorage::Mac(macAddress, macName, permissions);
 	delete[] permissions;
 	return result;
 }

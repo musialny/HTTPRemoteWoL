@@ -10,6 +10,7 @@
 
 #include <Arduino.h>
 #include <WString.h>
+#include "FlashStorage.h"
 
 namespace EEPROMStorage {
 	enum class UserPermissions: byte {
@@ -34,16 +35,17 @@ namespace EEPROMStorage {
 	};
 	
 	struct Mac {
+		char name[12];
 		byte address[6];
 		byte* permissions;
 		int permissionsSize;
 
-		Mac(const byte address[6], const byte* permissions);
+		Mac(const byte address[6], const char name[12], const byte* permissions);
 		~Mac();
 		int saveToEEPROM();
 	};
 	
-	void initStorage(byte userAmount, const byte woLDefaultAddressList[][6], int woLDefaultAddressListAmount);
+	void initStorage(byte userAmount, const byte woLDefaultAddressList[][6], FlashStorage<char> woLDefaultAddressNames[], int woLDefaultAddressListAmount);
 	byte readRawStorage(int address);
 	byte getUsersAmount();
 	byte getMacAddressesAmount();
