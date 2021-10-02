@@ -110,27 +110,32 @@ HttpMiddleware* Middlewares::homePage() {
 		for (int i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
 			auto mac = EEPROMStorage::getNearestMacAddress(i);
 			if (mac != nullptr) {
-				*resultBody += FlashStorage<char>(PSTR("<form action=\"/wol\" method=\"POST\"><label>ID: "))();
-				*resultBody += String(i);
-				*resultBody += FlashStorage<char>(PSTR(" | Name: "))();
-				for (byte o = 0; o < sizeof(mac->name); o++) {
-					if (mac->name[o] == '\0') break;
-					*resultBody += mac->name[o];
-				}
-				*resultBody += FlashStorage<char>(PSTR(" | MAC Address: "))();
-				for (byte o = 0; o < sizeof(mac->address); o++) {
-					char hex[3];
-					sprintf(hex, "%X", mac->address[o]);
-					*resultBody += hex + (o < (sizeof(mac->address) - 1) ? ":" : String());
-				}
-				delete mac;
-				*resultBody += FlashStorage<char>(PSTR(" </label>"))();
-				if (reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN)
+				if (Utilities::checkUserPerms(mac->permissions, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id)) {
+					*resultBody += FlashStorage<char>(PSTR("<form action=\"/wol\" method=\"POST\"><label>ID: "))();
+					*resultBody += String(i);
+					*resultBody += FlashStorage<char>(PSTR(" | Name: "))();
+					for (byte o = 0; o < sizeof(mac->name); o++) {
+						if (mac->name[o] == '\0') break;
+						*resultBody += mac->name[o];
+					}
+					*resultBody += FlashStorage<char>(PSTR(" | MAC Address: "))();
+					for (byte o = 0; o < sizeof(mac->address); o++) {
+						char hex[3];
+						sprintf(hex, "%X", mac->address[o]);
+						*resultBody += hex + (o < (sizeof(mac->address) - 1) ? ":" : String());
+					}
+					delete mac;
+					*resultBody += FlashStorage<char>(PSTR(" </label>"))();
+					*resultBody += FlashStorage<char>(PSTR("<input type=\"hidden\" name=\"id\" value=\""))();
+					*resultBody += String(i);
+					*resultBody += FlashStorage<char>(PSTR("\">"))();
+					if (reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN)
 					*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" name=\"delete\" value=\"Delete\">"))();
-				*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" name=\"invoke\" value=\"Invoke\">"))();
-				*resultBody += FlashStorage<char>(PSTR("</form>"))();
-				request.send->push(nullptr, resultBody);
-				*resultBody = "";
+					*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" name=\"invoke\" value=\"Invoke\">"))();
+					*resultBody += FlashStorage<char>(PSTR("</form>"))();
+					request.send->push(nullptr, resultBody);
+					*resultBody = "";
+				} else delete mac;
 			}
 		}
 		*resultBody += FlashStorage<char>::getString(HTML_END);
@@ -249,12 +254,14 @@ HttpMiddleware* Middlewares::users() {
 
 HttpMiddleware* Middlewares::wol() {
 	return new HttpMiddleware {HTTPMethods::POST, FlashStorage<char>(PSTR("/wol"))(), [](HTTPRequest& request) -> HTTPResponse* {
-		auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+		/*auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
 		*resultBody += FlashStorage<char>(PSTR("<h1>"))();
 		*resultBody += *request.body;
 		*resultBody += FlashStorage<char>(PSTR("</h1>"))();
-		*resultBody += FlashStorage<char>::getString(HTML_END);
+		*resultBody += FlashStorage<char>::getString(HTML_END);*/
 		// sendMagicPacket(*wolHandler, woLaddressesList[0]);
+		auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+		*resultBody += FlashStorage<char>::getString(HTML_END);
 		return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
 	}};
 }

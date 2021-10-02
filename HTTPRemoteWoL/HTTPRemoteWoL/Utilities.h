@@ -26,6 +26,7 @@ namespace Utilities {
 	String* decodeBASE64(const String& value, size_t inputShrink = 0);
 	bool compareFixedSizeArray(const String& value, const char fixedSizeArray[], size_t arraySize);
 	int calculateBitFieldsAllocation(int bits);
+	bool checkUserPerms(byte perms[], int userId);
 }
 
 #endif /* UTILITIES_H_ */

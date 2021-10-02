@@ -99,7 +99,7 @@ void EEPROMStorage::initStorage(byte userAmount, const byte woLDefaultAddressLis
 				name[o] = o >= nameString.length() ? '\0' : nameString.charAt(o);
 			EEPROMStorage::Mac(woLDefaultAddressList[i], name, perms).saveToEEPROM();
 		}
-		delete perms;
+		delete[] perms;
 	}
 }
 

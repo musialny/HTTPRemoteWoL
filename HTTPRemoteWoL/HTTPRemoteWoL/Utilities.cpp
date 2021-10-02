@@ -104,10 +104,16 @@ bool Utilities::compareFixedSizeArray(const String& value, const char fixedSizeA
 }
 
 int Utilities::calculateBitFieldsAllocation(int bits) {
+	float size = static_cast<float>(bits) / 8;
 	int result = 0;
-	while(bits > 0) {
-		result++;
-		bits -= 8;
-	}
+	if (size > static_cast<int>(size)) result = static_cast<int>(size) + 1;
+	else result = static_cast<int>(size);
 	return result;
+}
+
+bool Utilities::checkUserPerms(byte perms[], int userId) {
+	auto bitLocation = Utilities::calculateBitFieldsAllocation(userId);
+	if (bitLocation && userId % 8) bitLocation -= 1;
+	if (userId > 7) userId -= ((userId / 8) * 8);
+	return perms[bitLocation] & (1 << userId);
 }
