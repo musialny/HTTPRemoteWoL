@@ -37,7 +37,7 @@ HttpMiddleware* Middlewares::auth() {
 				if (credentials->amount == 2) {
 					for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 						auto user = EEPROMStorage::getUserCredentials(i);
-						if (Utilities::compareFixedSizeArray(credentials->strings[0], user->username, sizeof(user->username)) &&
+						if (user != nullptr && Utilities::compareFixedSizeArray(credentials->strings[0], user->username, sizeof(user->username)) &&
 							Utilities::compareFixedSizeArray(credentials->strings[1], user->password, sizeof(user->password))) {
 							delete credentials;
 							request.data = new EEPROMStorage::UserMetadata(i, user->username, user->permissions);
@@ -71,9 +71,11 @@ HttpMiddleware* Middlewares::homePage() {
 		delete chunk;
 		resultBody = new String;
 		if (reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN) {
-			*resultBody += FlashStorage<char>(PSTR("<a href=\"/users\">Menage Users</a>"))();
+			*resultBody += FlashStorage<char>(PSTR("<a href=\"/users\">Menage Users</a><a href=\"/perms\"> Menage Permissions</a>"))();
 			*resultBody += FlashStorage<char>(PSTR("<br><br><form action=\"/wol\" method=\"POST\">"))();
-			*resultBody += FlashStorage<char>(PSTR("<label>Mac Address </label>"))();
+			*resultBody += FlashStorage<char>(PSTR("<label>Name </label>"))();
+			*resultBody += FlashStorage<char>(PSTR("<input type=\"text\" name=\"name\" required>"))();
+			*resultBody += FlashStorage<char>(PSTR("<label> Mac Address </label>"))();
 			*resultBody += FlashStorage<char>(PSTR("<input type=\"text\" name=\"address\" required>"))();
 			*resultBody += FlashStorage<char>(PSTR("<label> Additional user </label>"))();
 			*resultBody += FlashStorage<char>(PSTR("<select name=\"users\" required>"))();
@@ -83,17 +85,14 @@ HttpMiddleware* Middlewares::homePage() {
 			for (byte i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 				String username;
 				auto user = EEPROMStorage::getUserCredentials(i);
-				if (user->username[0] == '\0') {
-					delete user;
-					break;
-				}
+				if (user == nullptr) continue;
 				for (byte o = 0; o < sizeof(user->username); o++) {
 					if (user->username[o] == '\0') break;
 					username += user->username[o];
 				}
 				delete user;
 				*resultBody += FlashStorage<char>(PSTR("<option value=\""))();
-				*resultBody += username;
+				*resultBody += String(i);
 				*resultBody += FlashStorage<char>(PSTR("\">"))();
 				*resultBody += username;
 				*resultBody += FlashStorage<char>(PSTR("</option>"))();
@@ -109,34 +108,32 @@ HttpMiddleware* Middlewares::homePage() {
 		*resultBody += FlashStorage<char>(PSTR("<br>"))();
 		for (int i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
 			auto mac = EEPROMStorage::getNearestMacAddress(i);
-			if (mac != nullptr) {
-				if (Utilities::checkUserPerms(mac->permissions, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id)) {
-					*resultBody += FlashStorage<char>(PSTR("<form action=\"/wol\" method=\"POST\"><label>ID: "))();
-					*resultBody += String(i);
-					*resultBody += FlashStorage<char>(PSTR(" | Name: "))();
-					for (byte o = 0; o < sizeof(mac->name); o++) {
-						if (mac->name[o] == '\0') break;
-						*resultBody += mac->name[o];
-					}
-					*resultBody += FlashStorage<char>(PSTR(" | MAC Address: "))();
-					for (byte o = 0; o < sizeof(mac->address); o++) {
-						char hex[3];
-						sprintf(hex, "%X", mac->address[o]);
-						*resultBody += hex + (o < (sizeof(mac->address) - 1) ? ":" : String());
-					}
-					delete mac;
-					*resultBody += FlashStorage<char>(PSTR(" </label>"))();
-					*resultBody += FlashStorage<char>(PSTR("<input type=\"hidden\" name=\"id\" value=\""))();
-					*resultBody += String(i);
-					*resultBody += FlashStorage<char>(PSTR("\">"))();
-					if (reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN)
+			if (mac != nullptr && Utilities::checkUserPerms(mac->permissions, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id)) {
+				*resultBody += FlashStorage<char>(PSTR("<form action=\"/wol\" method=\"POST\"><label>ID: "))();
+				*resultBody += String(i);
+				*resultBody += FlashStorage<char>(PSTR(" | Name: "))();
+				for (byte o = 0; o < sizeof(mac->name); o++) {
+					if (mac->name[o] == '\0') break;
+					*resultBody += mac->name[o];
+				}
+				*resultBody += FlashStorage<char>(PSTR(" | MAC Address: "))();
+				for (byte o = 0; o < sizeof(mac->address); o++) {
+					char hex[3];
+					sprintf(hex, "%X", mac->address[o]);
+					*resultBody += hex + (o < (sizeof(mac->address) - 1) ? ":" : String());
+				}
+				delete mac;
+				*resultBody += FlashStorage<char>(PSTR(" </label>"))();
+				*resultBody += FlashStorage<char>(PSTR("<input type=\"hidden\" name=\"id\" value=\""))();
+				*resultBody += String(i);
+				*resultBody += FlashStorage<char>(PSTR("\">"))();
+				if (reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN)
 					*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" name=\"delete\" value=\"Delete\">"))();
-					*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" name=\"invoke\" value=\"Invoke\">"))();
-					*resultBody += FlashStorage<char>(PSTR("</form>"))();
-					request.send->push(nullptr, resultBody);
-					*resultBody = "";
-				} else delete mac;
-			}
+				*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" name=\"invoke\" value=\"Invoke\">"))();
+				*resultBody += FlashStorage<char>(PSTR("</form>"))();
+				request.send->push(nullptr, resultBody);
+				*resultBody = "";
+			} else delete mac;
 		}
 		*resultBody += FlashStorage<char>::getString(HTML_END);
 		return new HTTPResponse {0, nullptr, 0, resultBody};
@@ -169,27 +166,26 @@ HttpMiddleware* Middlewares::users() {
 				byte registeredUsers = 0;
 				for (byte i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 					auto user = EEPROMStorage::getUserCredentials(i);
-					if (*user->username != '\0') {
-						registeredUsers++;
-						*resultBody += FlashStorage<char>(PSTR("<form action=\"/users\" method=\"POST\">"))();
-						*resultBody += FlashStorage<char>(PSTR("<label> ID: "))();
-						*resultBody += String(i);
-						*resultBody += FlashStorage<char>(PSTR(" | Username: "))();
-						for (byte o = 0; o < sizeof(user->username); o++) {
-							if (user->username[o] == '\0') break;
-							*resultBody += user->username[o];
-						}
-						*resultBody += FlashStorage<char>(PSTR(" | Permission Level: "))();
-						*resultBody += String(static_cast<byte>(user->permissions));
-						*resultBody += FlashStorage<char>(PSTR(" </label>"))();
-						*resultBody += FlashStorage<char>(PSTR("<input type=\"hidden\" name=\"id\" value=\""))();
-						*resultBody += String(i);
-						*resultBody += FlashStorage<char>(PSTR("\">"))();
-						*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" value=\"Delete\">"))();
-						*resultBody += FlashStorage<char>(PSTR("</form>"))();
-						request.send->push(nullptr, resultBody);
-						*resultBody = "";
+					if (user == nullptr) continue;
+					registeredUsers++;
+					*resultBody += FlashStorage<char>(PSTR("<form action=\"/users\" method=\"POST\">"))();
+					*resultBody += FlashStorage<char>(PSTR("<label> ID: "))();
+					*resultBody += String(i);
+					*resultBody += FlashStorage<char>(PSTR(" | Username: "))();
+					for (byte o = 0; o < sizeof(user->username); o++) {
+						if (user->username[o] == '\0') break;
+						*resultBody += user->username[o];
 					}
+					*resultBody += FlashStorage<char>(PSTR(" | Permission Level: "))();
+					*resultBody += String(static_cast<byte>(user->permissions));
+					*resultBody += FlashStorage<char>(PSTR(" </label>"))();
+					*resultBody += FlashStorage<char>(PSTR("<input type=\"hidden\" name=\"id\" value=\""))();
+					*resultBody += String(i);
+					*resultBody += FlashStorage<char>(PSTR("\">"))();
+					*resultBody += FlashStorage<char>(PSTR("<input type=\"submit\" value=\"Delete\">"))();
+					*resultBody += FlashStorage<char>(PSTR("</form>"))();
+					request.send->push(nullptr, resultBody);
+					*resultBody = "";
 					delete user;
 				}
 				*resultBody += FlashStorage<char>(PSTR("<h3>Registered users: "))();
@@ -254,15 +250,104 @@ HttpMiddleware* Middlewares::users() {
 
 HttpMiddleware* Middlewares::wol() {
 	return new HttpMiddleware {HTTPMethods::POST, FlashStorage<char>(PSTR("/wol"))(), [](HTTPRequest& request) -> HTTPResponse* {
-		/*auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
-		*resultBody += FlashStorage<char>(PSTR("<h1>"))();
-		*resultBody += *request.body;
-		*resultBody += FlashStorage<char>(PSTR("</h1>"))();
-		*resultBody += FlashStorage<char>::getString(HTML_END);*/
-		// sendMagicPacket(*wolHandler, woLaddressesList[0]);
-		auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
-		*resultBody += FlashStorage<char>::getString(HTML_END);
-		return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+		auto params = Utilities::split(*request.body, "&");
+		if (params->amount == 4 && reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN) {
+			Utilities::SplittedString* parsedParams[] = {Utilities::split(params->strings[0], "="), Utilities::split(params->strings[1], "="),
+														 Utilities::split(params->strings[2], "="), Utilities::split(params->strings[3], "=")};
+			delete params;
+			if (parsedParams[0]->amount == 2 && parsedParams[1]->amount == 2 && parsedParams[2]->amount == 2 && parsedParams[3]->amount == 2 &&
+				parsedParams[0]->strings[0] == FlashStorage<char>(PSTR("name"))() &&
+				parsedParams[1]->strings[0] == FlashStorage<char>(PSTR("address"))() &&
+				parsedParams[2]->strings[0] == FlashStorage<char>(PSTR("users"))() &&
+				(parsedParams[3]->strings[0] == FlashStorage<char>(PSTR("invoke"))() || parsedParams[3]->strings[0] == FlashStorage<char>(PSTR("save"))()) &&
+				parsedParams[0]->strings[1].length() > 0 &&
+				parsedParams[1]->strings[1].length() > 0 &&
+				parsedParams[2]->strings[1].length() > 0 &&
+				parsedParams[3]->strings[1].length() > 0) {
+					if (parsedParams[3]->strings[0] == FlashStorage<char>(PSTR("save"))()) {
+						byte* mac = Utilities::parseUrlMacAddress(parsedParams[1]->strings[1]);
+						if (mac == nullptr) {
+							delete parsedParams[0];
+							delete parsedParams[1];
+							delete parsedParams[2];
+							delete parsedParams[3];
+							return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+						}
+						char name[12];
+						for (byte o = 0; o < sizeof(name); o++)
+							name[o] = o >= parsedParams[0]->strings[1].length() ? '\0' : parsedParams[0]->strings[1].charAt(o);
+						auto perms = new byte[Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount())] {};
+						Utilities::setUserPerms(perms, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id);
+						if (parsedParams[2]->strings[1] != FlashStorage<char>(PSTR("null"))())
+							Utilities::setUserPerms(perms, atoi(parsedParams[2]->strings[1].c_str()));
+						auto macId = EEPROMStorage::Mac(mac, name, perms).saveToEEPROM();
+						delete parsedParams[0];
+						delete parsedParams[1];
+						delete parsedParams[2];
+						delete parsedParams[3];
+						delete[] perms;
+						delete[] mac;
+						if (macId == -1) {
+							auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+							*resultBody += FlashStorage<char>(PSTR("<h3>Mac Addresses limit hitted</h3><a href=\"/\">Back</a>"))();
+							*resultBody += FlashStorage<char>::getString(HTML_END);
+							return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+						} else {
+							auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+							*resultBody += FlashStorage<char>(PSTR("<h3>Mac added</h3><h4>ID: "))();
+							*resultBody += String(macId);
+							*resultBody += FlashStorage<char>(PSTR("</h4><a href=\"/\">Back</a>"))();
+							*resultBody += FlashStorage<char>::getString(HTML_END);
+							return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+						}
+					} else {
+						delete parsedParams[0];
+						delete parsedParams[2];
+						delete parsedParams[3];
+						byte* mac = Utilities::parseUrlMacAddress(parsedParams[1]->strings[1]);
+						delete parsedParams[1];
+						if (mac == nullptr) 
+							return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+						sendMagicPacket(*wolHandler, mac);
+						delete[] mac;
+						auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+						*resultBody += FlashStorage<char>(PSTR("<h3>Magic Packet sent</h3><a href=\"/\">Back</a>"))();
+						*resultBody += FlashStorage<char>::getString(HTML_END);
+						return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+					}
+			} else return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+		} else if (params->amount == 2) {
+			Utilities::SplittedString* parsedParam = Utilities::split(params->strings[0], "=");
+			String param2 = params->strings[1];
+			delete params;
+			if (parsedParam->amount == 2 && parsedParam->strings[0] == FlashStorage<char>(PSTR("id"))() && parsedParam->strings[1].length() > 0) {
+				byte id = atoi(parsedParam->strings[1].c_str());
+				delete parsedParam;
+				if (param2 == FlashStorage<char>(PSTR("delete=Delete"))() && reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN) {
+					EEPROMStorage::removeNearestMacAddress(id);
+					auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+					*resultBody += FlashStorage<char>(PSTR("<h3>Magic Packet Removed</h3><a href=\"/\">Back</a>"))();
+					*resultBody += FlashStorage<char>::getString(HTML_END);
+					return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+				} else if (param2 == FlashStorage<char>(PSTR("invoke=Invoke"))()) {
+					auto mac = EEPROMStorage::getNearestMacAddress(id);
+					if (mac != nullptr && Utilities::checkUserPerms(mac->permissions, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id))
+						sendMagicPacket(*wolHandler, mac->address);
+					else {
+						delete mac;
+						return new HTTPResponse {403, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(FORBIDDEN))};
+					}
+					delete mac;
+					auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
+					*resultBody += FlashStorage<char>(PSTR("<h3>Magic Packet Invoked</h3><a href=\"/\">Back</a>"))();
+					*resultBody += FlashStorage<char>::getString(HTML_END);
+					return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
+				} else return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+			} else return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+		} else {
+			delete params;
+			return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
+		}
 	}};
 }
 

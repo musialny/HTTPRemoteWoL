@@ -50,7 +50,7 @@ EEPROMStorage::Mac::~Mac() {
 
 int EEPROMStorage::Mac::saveToEEPROM() {
 	if (EEPROMStorage::getMacAddressesAmount() < MAC_ALLOCATION_TABLE_MAX_SIZE) {
-		auto save = [](byte i, byte* data, int permissionsSize) -> void {
+		auto save = [](int i, byte* data, int permissionsSize) -> void {
 			for (byte o = 0; o < sizeof(EEPROMStorage::Mac::address) + sizeof(EEPROMStorage::Mac::name) + permissionsSize; o++)
 				EEPROM.write(MAC_DATA_TABLE_DATA_BEGIN(i) + o, data[o]);
 			EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, EEPROMStorage::getMacAddressesAmount() + 1);
@@ -67,9 +67,9 @@ int EEPROMStorage::Mac::saveToEEPROM() {
 			delete[] data;
 			return 1;
 		} else {
-			for (byte i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
+			for (int i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
 				if (!EEPROMStorage::isMacAddressExists(i)) {
-					save(0, data, this->permissionsSize);
+					save(i, data, this->permissionsSize);
 					delete[] data;
 					return i;
 				}
@@ -116,6 +116,7 @@ byte EEPROMStorage::getMacAddressesAmount() {
 }
 
 bool EEPROMStorage::isMacAddressExists(byte id) {
+	if (id >= EEPROMStorage::getMacAddressesAmount()) return false;
 	int address = MAC_DATA_TABLE_DATA_BEGIN(id);
 	byte checksumSize = Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount());
 	byte incrementator = 0;
@@ -169,6 +170,10 @@ EEPROMStorage::Mac* EEPROMStorage::getMacAddress(byte id) {
 EEPROMStorage::User* EEPROMStorage::getUserCredentials(byte userId) {
 	auto user = new EEPROMStorage::User;
 	EEPROM.get(!userId ? sizeof(byte) : sizeof(byte) + (userId * sizeof(EEPROMStorage::User)), *user);
+	if (user->username[0] == '\0') {
+		delete user;
+		return nullptr;
+	}
 	return user;
 }
 

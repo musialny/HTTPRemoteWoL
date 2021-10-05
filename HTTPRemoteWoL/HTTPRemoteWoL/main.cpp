@@ -27,13 +27,16 @@ void setup() {
 	FlashStorage<char> woLNames[woLDefaultAddressListAmount] = {woLDefaultAddressNames::PC};
 	EEPROMStorage::initStorage(20, woLDefaultAddressList, woLNames, woLDefaultAddressListAmount);
 	
-	/*for (int i = 0; i < 8 * 1024; i++) {
+	/*for (int i = 0; i < 200; i++)
+		Serial.println("Utilities::calculateBitFieldsAllocation(" + String(i) + ") -> " + String(Utilities::calculateBitFieldsAllocation(i)));*/
+	
+	/*for (int i = 0; i < 2 * 1024; i++) {
 		char result = EEPROMStorage::readRawStorage(i);
 		// if (result != 255)
 			Serial.print(String(static_cast<byte>(result)) + "|");
 	}
 	Serial.println();
-	for (int i = 0; i < 8 * 1024; i++) {
+	for (int i = 0; i < 2 * 1024; i++) {
 		char result = EEPROMStorage::readRawStorage(i);
 		if (result != 255)
 			Serial.print(String(result) + [&result]() -> String {
@@ -47,11 +50,13 @@ void setup() {
 	Serial.println();
 	for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 		auto user = EEPROMStorage::getUserCredentials(i);
-		Serial.print(FlashStorage<char>(PSTR("user->username = "))() + String(user->username));
-		Serial.print(FlashStorage<char>(PSTR(" | user->password = "))() + String(user->password));
-		Serial.print(FlashStorage<char>(PSTR(" | user->permissions = "))() + String(static_cast<byte>(user->permissions)));
-		Serial.println();
-		delete user;
+		if (user != nullptr) {
+			Serial.print(FlashStorage<char>(PSTR("user->username = "))() + String(user->username));
+			Serial.print(FlashStorage<char>(PSTR(" | user->password = "))() + String(user->password));
+			Serial.print(FlashStorage<char>(PSTR(" | user->permissions = "))() + String(static_cast<byte>(user->permissions)));
+			Serial.println();
+			delete user;
+		}
 	}*/
 	
 	const byte deviceMac[6] = {0xC0, 0x06, 0x42, 0xC4, 0x40, 0x9D};
@@ -69,6 +74,7 @@ void loop() {
 	httpServer->listen();
 }
 
+// TODO: Create mac user permisions menager
 // TODO: Avoid user username duplication
 // TODO: Allow to change password
 // TODO: Create request limiters

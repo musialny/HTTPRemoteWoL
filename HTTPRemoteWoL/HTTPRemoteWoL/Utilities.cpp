@@ -6,6 +6,7 @@
  */ 
 
 #include "Utilities.h"
+#include "FlashStorage.h"
 
 Utilities::SplittedString::SplittedString() {
 	this->amount = 0;
@@ -104,16 +105,35 @@ bool Utilities::compareFixedSizeArray(const String& value, const char fixedSizeA
 }
 
 int Utilities::calculateBitFieldsAllocation(int bits) {
-	float size = static_cast<float>(bits) / 8;
-	int result = 0;
-	if (size > static_cast<int>(size)) result = static_cast<int>(size) + 1;
-	else result = static_cast<int>(size);
+	float result = static_cast<float>(bits) / 8;
+	if (result > static_cast<int>(result)) result++;
 	return result;
 }
 
-bool Utilities::checkUserPerms(byte perms[], int userId) {
+bool Utilities::checkUserPerms(const byte perms[], int userId) {
 	auto bitLocation = Utilities::calculateBitFieldsAllocation(userId);
 	if (bitLocation && userId % 8) bitLocation -= 1;
 	if (userId > 7) userId -= ((userId / 8) * 8);
 	return perms[bitLocation] & (1 << userId);
+}
+
+void Utilities::setUserPerms(byte perms[], int userId, bool value) {
+	auto bitLocation = Utilities::calculateBitFieldsAllocation(userId);
+	if (bitLocation && userId % 8) bitLocation -= 1;
+	if (userId > 7) userId -= ((userId / 8) * 8);
+	if (value) perms[bitLocation] |= 1U << userId;
+	else perms[bitLocation] &= ~(1U << userId);
+}
+
+byte* Utilities::parseUrlMacAddress(const String& address) {
+	auto split = Utilities::split(address, FlashStorage<char>(PSTR("%3A"))());
+	if (split->amount == 6) {
+		auto resultMac = new byte[6];
+		for (byte i = 0; i < 6; i++)
+			resultMac[i] = strtol(split->strings[i].c_str(), nullptr, 16);
+		delete split;
+		return resultMac;
+	}
+	delete split;
+	return nullptr;
 }
