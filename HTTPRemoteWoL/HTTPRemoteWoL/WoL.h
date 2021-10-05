@@ -11,14 +11,15 @@
 #include <SPI.h>
 #include <Ethernet.h>
 
-struct WoLHandler {
-	EthernetUDP udp;
-	byte* broadCastIp;
-	WoLHandler(const byte* const broadCastIp);
-	~WoLHandler();
-};
+namespace WoL {
+	struct WoLHandler {
+		EthernetUDP udp;
+		byte* broadCastIp;
+		WoLHandler(const byte* const broadCastIp);
+		~WoLHandler();
+	};
 
-void sendMagicPacket(WoLHandler& woLHandler, const byte* const remote_MAC_ADD);
-
+	void sendMagicPacket(WoLHandler& woLHandler, const byte* const remote_MAC_ADD);
+}
 
 #endif /* WOL_H_ */

@@ -11,7 +11,7 @@
 #include "Utilities.h"
 #include "FlashStorage.h"
 
-extern WoLHandler* wolHandler;
+extern WoL::WoLHandler* wolHandler;
 
 // Flash Constants
 const char ASTERIX[] PROGMEM = "*";
@@ -308,7 +308,7 @@ HttpMiddleware* Middlewares::wol() {
 						delete parsedParams[1];
 						if (mac == nullptr) 
 							return new HTTPResponse {500, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(INVALID_REQUEST))};
-						sendMagicPacket(*wolHandler, mac);
+						WoL::sendMagicPacket(*wolHandler, mac);
 						delete[] mac;
 						auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
 						*resultBody += FlashStorage<char>(PSTR("<h3>Magic Packet sent</h3><a href=\"/\">Back</a>"))();
@@ -332,7 +332,7 @@ HttpMiddleware* Middlewares::wol() {
 				} else if (param2 == FlashStorage<char>(PSTR("invoke=Invoke"))()) {
 					auto mac = EEPROMStorage::getNearestMacAddress(id);
 					if (mac != nullptr && Utilities::checkUserPerms(mac->permissions, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id))
-						sendMagicPacket(*wolHandler, mac->address);
+						WoL::sendMagicPacket(*wolHandler, mac->address);
 					else {
 						delete mac;
 						return new HTTPResponse {403, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(FORBIDDEN))};

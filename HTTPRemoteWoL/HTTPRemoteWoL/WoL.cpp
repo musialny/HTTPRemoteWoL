@@ -7,16 +7,16 @@
 
 #include "WoL.h"
 
-WoLHandler::WoLHandler(const byte* const broadCastIp) {
+WoL::WoLHandler::WoLHandler(const byte* const broadCastIp) {
 	this->udp.begin(7);
 	this->broadCastIp = new byte[4] {broadCastIp[0], broadCastIp[1], broadCastIp[2], broadCastIp[3]};
 }
 
-WoLHandler::~WoLHandler() {
+WoL::WoLHandler::~WoLHandler() {
 	delete this->broadCastIp;
 }
 
-void sendMagicPacket(WoLHandler& woLHandler, const byte* const remote_MAC_ADD) {
+void WoL::sendMagicPacket(WoLHandler& woLHandler, const byte* const remote_MAC_ADD) {
 	int wolPort = 9;
 	byte magicPacket[102];
 

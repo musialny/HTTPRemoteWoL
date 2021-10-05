@@ -15,7 +15,7 @@ namespace woLDefaultAddressNames {
 	const char PC[] PROGMEM = "PC";
 }
 
-WoLHandler* wolHandler;
+WoL::WoLHandler* wolHandler;
 HTTPServer* httpServer;
 
 void setup() {
@@ -67,7 +67,7 @@ void setup() {
 		.use(Middlewares::users())
 		.use(Middlewares::wol())
 		.use(Middlewares::notFound404());
-	wolHandler = new WoLHandler(broadcastAddress);
+	wolHandler = new WoL::WoLHandler(broadcastAddress);
 }
 
 void loop() {
