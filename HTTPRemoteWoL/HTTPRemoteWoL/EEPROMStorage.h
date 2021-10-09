@@ -45,7 +45,8 @@ namespace EEPROMStorage {
 		int saveToEEPROM(int slot = -1);
 	};
 	
-	void initStorage(byte userAmount, const byte woLDefaultAddressList[][6], FlashStorage<char> woLDefaultAddressNames[], int woLDefaultAddressListAmount);
+	void initStorage(byte userAmount, byte macAmount, const byte woLDefaultAddressList[][6], FlashStorage<char> woLDefaultAddressNames[], int woLDefaultAddressListAmount);
+	void formatStorage();
 	byte readRawStorage(int address);
 	byte getUsersAmount();
 	byte getMacAddressesAmount();

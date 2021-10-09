@@ -9,8 +9,6 @@
 #include "Utilities.h"
 #include "FlashStorage.h"
 
-constexpr int STATUS_PIN = 9;
-
 HTTPRequest::HTTPRequest(String* url, String* urlParams, HTTPMethods method, HTTPHeaders* headers, String* body, void* data,  HTTPSendResponse* send, bool deleteBody) :
 	url(url), urlParams(urlParams), method(method), headers(headers), body(body), data(data), send(send), deleteBody(deleteBody) {}
 
@@ -54,7 +52,7 @@ void HTTPSendResponse::push(HTTPResponse* response, String* body) {
 	} else if (body != nullptr) client.print(*body);
 }
 
-HTTPServer::HTTPServer(const byte deviceMacAddress[], const IPAddress& ip, int port) {
+HTTPServer::HTTPServer(const byte deviceMacAddress[], const IPAddress& ip, int port, int STATUS_PIN) {
 	this->middlewares = new ElasticArray<const HttpMiddleware*>;
 	this->server = new EthernetServer(port);
 	Ethernet.begin(const_cast<byte*>(deviceMacAddress), ip);

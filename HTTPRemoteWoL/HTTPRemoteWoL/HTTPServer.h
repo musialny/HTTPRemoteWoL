@@ -82,7 +82,7 @@ private:
 	EthernetServer* server;
 	
 public:
-	HTTPServer(const byte deviceMacAddress[6], const IPAddress& ip, int port = 80);
+	HTTPServer(const byte deviceMacAddress[6], const IPAddress& ip, int port = 80, int STATUS_PIN = 9);
 	~HTTPServer();
 	
 	HTTPServer& use(const HttpMiddleware* middleware);
