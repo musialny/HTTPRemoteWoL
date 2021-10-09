@@ -22,19 +22,19 @@ void setup() {
 	constexpr const byte woLDefaultAddressList[woLDefaultAddressListAmount][6] = {{ 0x18, 0xC0, 0x4D, 0x85, 0x10, 0x2F }};
 	FlashStorage<char> woLNames[woLDefaultAddressListAmount] = {woLDefaultAddressNames::PC};
 	constexpr const byte deviceMac[6] = {0xD0, 0xD4, 0xC3, 0x71, 0x82, 0x19};
-	constexpr const byte broadcastAddress[4] = { 10, 10, 0, 255 };
 	
 	pinMode(FACTORY_RESET_PIN, INPUT);
 	if (digitalRead(FACTORY_RESET_PIN)) EEPROMStorage::formatStorage();
 	
 	EEPROMStorage::initStorage(20, 100, woLDefaultAddressList, woLNames, woLDefaultAddressListAmount);
-	httpServer = new HTTPServer(deviceMac, IPAddress(10, 10, 0, 10), 80, STATUS_PIN);
+	httpServer = new HTTPServer(deviceMac, IPAddress(10, 10, 0, 10), true, 80, STATUS_PIN);
 	httpServer->use(Middlewares::auth())
 		.use(Middlewares::homePage())
 		.use(Middlewares::users())
 		.use(Middlewares::wol())
 		.use(Middlewares::notFound404());
-	wolHandler = new WoL::WoLHandler(broadcastAddress);
+	wolHandler = new WoL::WoLHandler(IPAddress (~Ethernet.subnetMask()[0] + (Ethernet.localIP()[0] & Ethernet.subnetMask()[0]), ~Ethernet.subnetMask()[1] + (Ethernet.localIP()[1] & Ethernet.subnetMask()[1]),
+												~Ethernet.subnetMask()[2] + (Ethernet.localIP()[2] & Ethernet.subnetMask()[2]), ~Ethernet.subnetMask()[3] + (Ethernet.localIP()[3] & Ethernet.subnetMask()[3])));
 }
 
 void loop() {

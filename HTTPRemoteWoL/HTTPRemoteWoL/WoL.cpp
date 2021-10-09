@@ -7,9 +7,9 @@
 
 #include "WoL.h"
 
-WoL::WoLHandler::WoLHandler(const byte* const broadCastIp) {
+WoL::WoLHandler::WoLHandler(const IPAddress& ip) {
 	this->udp.begin(7);
-	this->broadCastIp = new byte[4] {broadCastIp[0], broadCastIp[1], broadCastIp[2], broadCastIp[3]};
+	this->broadCastIp = new byte[4] {ip[0], ip[1], ip[2], ip[3]};
 }
 
 WoL::WoLHandler::~WoLHandler() {

@@ -15,7 +15,7 @@ namespace WoL {
 	struct WoLHandler {
 		EthernetUDP udp;
 		byte* broadCastIp;
-		WoLHandler(const byte* const broadCastIp);
+		WoLHandler(const IPAddress& ip);
 		~WoLHandler();
 	};
 

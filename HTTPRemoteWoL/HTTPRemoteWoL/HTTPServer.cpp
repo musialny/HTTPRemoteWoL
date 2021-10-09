@@ -52,10 +52,11 @@ void HTTPSendResponse::push(HTTPResponse* response, String* body) {
 	} else if (body != nullptr) client.print(*body);
 }
 
-HTTPServer::HTTPServer(const byte deviceMacAddress[], const IPAddress& ip, int port, int STATUS_PIN) {
+HTTPServer::HTTPServer(const byte deviceMacAddress[], const IPAddress& ip, bool useDHCP, int port, int STATUS_PIN) {
 	this->middlewares = new ElasticArray<const HttpMiddleware*>;
 	this->server = new EthernetServer(port);
-	Ethernet.begin(const_cast<byte*>(deviceMacAddress), ip);
+	if (!useDHCP || !Ethernet.begin(const_cast<byte*>(deviceMacAddress)))
+		Ethernet.begin(const_cast<byte*>(deviceMacAddress), ip);
 	pinMode(STATUS_PIN, OUTPUT);
 	if (Ethernet.hardwareStatus() == EthernetNoHardware) {
 		while (true) {
@@ -125,6 +126,7 @@ void parseHeaders(HTTPHeaders* headers, const String& requestLine) {
 }
 
 void HTTPServer::listen() {
+	Ethernet.maintain();
 	auto client = server->available();
 	if (client) {
 		HTTPSendResponse send(client);
