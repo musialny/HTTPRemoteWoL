@@ -42,7 +42,7 @@ namespace EEPROMStorage {
 
 		Mac(const byte address[6], const char name[12], const byte* permissions);
 		~Mac();
-		int saveToEEPROM();
+		int saveToEEPROM(int slot = -1);
 	};
 	
 	void initStorage(byte userAmount, const byte woLDefaultAddressList[][6], FlashStorage<char> woLDefaultAddressNames[], int woLDefaultAddressListAmount);

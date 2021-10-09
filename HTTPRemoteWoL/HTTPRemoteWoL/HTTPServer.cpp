@@ -11,12 +11,13 @@
 
 constexpr int STATUS_PIN = 9;
 
-HTTPRequest::HTTPRequest(String* url, HTTPMethods method, HTTPHeaders* headers, String* body, void* data,  HTTPSendResponse* send, bool deleteBody) :
-	url(url), method(method), headers(headers), body(body), data(data), send(send), deleteBody(deleteBody) {}
+HTTPRequest::HTTPRequest(String* url, String* urlParams, HTTPMethods method, HTTPHeaders* headers, String* body, void* data,  HTTPSendResponse* send, bool deleteBody) :
+	url(url), urlParams(urlParams), method(method), headers(headers), body(body), data(data), send(send), deleteBody(deleteBody) {}
 
 HTTPRequest::~HTTPRequest() {
 	if (deleteBody)	{
 		delete this->url;
+		delete this->urlParams;
 		delete[] this->headers;
 		delete this->body;
 		delete this->data;
@@ -95,7 +96,10 @@ Metadata* parseMetadata(const String& requestLine) {
 	else if (split->strings[0] == String("POST")) result->method = HTTPMethods::POST;
 	else if (split->strings[0] == String("DELETE")) result->method = HTTPMethods::DELETE;
 	auto url = Utilities::split(split->strings[1], "?");
-	if (url->amount) result->url = url->strings[0];
+	if (url->amount) {
+		result->url = url->strings[0];
+		result->urlParams = url->strings[1];
+	}
 	else result->url = split->strings[1];
 	delete split;
 	delete url;
@@ -154,7 +158,7 @@ void HTTPServer::listen() {
 				} else if (c != '\r' && c != '\0') *rawRequestLine += c;
 			} else {
 				body = rawRequestLine;
-				HTTPRequest request(&metadata->url, metadata->method, headers, body, nullptr, &send, false);
+				HTTPRequest request(&metadata->url, &metadata->urlParams, metadata->method, headers, body, nullptr, &send, false);
 				HTTPResponse* response = nullptr;
 				for (int i = 0; i < this->middlewares->length(); i++) {
 					if ((*this->middlewares)[i]->method == metadata->method || (*this->middlewares)[i]->method == HTTPMethods::ALL) {

@@ -11,7 +11,7 @@
 #include "Utilities.h"
 
 constexpr const int USER_DATA_ADDRESS = 0;
-constexpr const int MAC_ALLOCATION_TABLE_MAX_SIZE = 50;
+constexpr const int MAC_ALLOCATION_TABLE_MAX_SIZE = 100;
 	
 #define MAC_DATA_TABLE_AMOUNT_BEGIN (sizeof(byte) + (EEPROMStorage::getUsersAmount() * sizeof(EEPROMStorage::User)))
 #define MAC_DATA_TABLE_DATA_BEGIN(x) ((2 * sizeof(byte)) + (EEPROMStorage::getUsersAmount() * sizeof(EEPROMStorage::User)) + \
@@ -48,7 +48,7 @@ EEPROMStorage::Mac::~Mac() {
 	delete[] this->permissions;
 }
 
-int EEPROMStorage::Mac::saveToEEPROM() {
+int EEPROMStorage::Mac::saveToEEPROM(int slot) {
 	if (EEPROMStorage::getMacAddressesAmount() < MAC_ALLOCATION_TABLE_MAX_SIZE) {
 		auto save = [](int i, byte* data, int permissionsSize) -> void {
 			for (byte o = 0; o < sizeof(EEPROMStorage::Mac::address) + sizeof(EEPROMStorage::Mac::name) + permissionsSize; o++)
@@ -62,7 +62,12 @@ int EEPROMStorage::Mac::saveToEEPROM() {
 			data[i + this->permissionsSize] = this->address[i];
 		for (byte i = 0; i < sizeof(this->name); i++)
 			data[i + this->permissionsSize + sizeof(this->address)] = this->name[i];
-		if (!EEPROMStorage::getMacAddressesAmount()) {
+		if (slot > -1) {
+			save(slot, data, this->permissionsSize);
+			delete[] data;
+			return slot;
+		}
+		else if (!EEPROMStorage::getMacAddressesAmount()) {
 			save(0, data, this->permissionsSize);
 			delete[] data;
 			return 1;

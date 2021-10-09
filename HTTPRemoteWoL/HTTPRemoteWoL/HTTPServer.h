@@ -21,6 +21,7 @@ enum class HTTPMethods {
 
 struct Metadata {
 	String url;
+	String urlParams;
 	HTTPMethods method;
 };
 
@@ -34,14 +35,15 @@ struct HTTPHeaders {
 class HTTPSendResponse;
 struct HTTPRequest {
 	String* url;
+	String* urlParams;
 	HTTPMethods method;
 	HTTPHeaders* headers;
 	String* body;
 	void* data;
 	HTTPSendResponse* send;
-	HTTPRequest(String* url = nullptr, HTTPMethods method = HTTPMethods::GET, HTTPHeaders* headers = nullptr, String* body = nullptr, void* data = nullptr, HTTPSendResponse* send = nullptr, bool deleteBody = true);
+	HTTPRequest(String* url = nullptr, String* urlParams = nullptr, HTTPMethods method = HTTPMethods::GET, HTTPHeaders* headers = nullptr, String* body = nullptr, void* data = nullptr, HTTPSendResponse* send = nullptr, bool deleteBody = true);
 	~HTTPRequest();
-	private:
+private:
 	bool deleteBody;
 };
 
@@ -52,7 +54,7 @@ struct HTTPResponse {
 	String* body;
 	HTTPResponse(int statusCode = 500, String* headers = nullptr, int headersCount = 0, String* body = nullptr, bool deleteBody = true);
 	~HTTPResponse();
-	private:
+private:
 	bool deleteBody;
 };
 
