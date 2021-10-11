@@ -47,7 +47,6 @@ namespace EEPROMStorage {
 	
 	void initStorage(byte userAmount, byte macAmount, const byte woLDefaultAddressList[][6], FlashStorage<char> woLDefaultAddressNames[], int woLDefaultAddressListAmount);
 	void formatStorage();
-	byte readRawStorage(int address);
 	byte getUsersAmount();
 	byte getMacAddressesAmount();
 	bool isMacAddressExists(byte id);
@@ -56,7 +55,7 @@ namespace EEPROMStorage {
 	EEPROMStorage::Mac* getMacAddress(byte id);
 	EEPROMStorage::User* getUserCredentials(byte userId);
 	EEPROMStorage::UserPermissions getUserPermissions(byte userId);
-	bool pushUser(const EEPROMStorage::User& user);
+	bool pushUser(const EEPROMStorage::User& user, int slot = -1);
 	bool removeUser(byte id);
 }
 

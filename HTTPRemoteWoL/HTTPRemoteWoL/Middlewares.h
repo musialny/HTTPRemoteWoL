@@ -14,6 +14,7 @@ namespace Middlewares {
 	HttpMiddleware* auth();
 	HttpMiddleware* homePage();
 	HttpMiddleware* users();
+	HttpMiddleware* user();
 	HttpMiddleware* wol();
 	
 	HttpMiddleware* notFound404();

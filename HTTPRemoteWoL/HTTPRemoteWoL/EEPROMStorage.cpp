@@ -66,11 +66,10 @@ int EEPROMStorage::Mac::saveToEEPROM(int slot) {
 			save(slot, data, this->permissionsSize);
 			delete[] data;
 			return slot;
-		}
-		else if (!EEPROMStorage::getMacAddressesAmount()) {
+		} else if (!EEPROMStorage::getMacAddressesAmount()) {
 			save(0, data, this->permissionsSize);
 			delete[] data;
-			return 1;
+			return 0;
 		} else {
 			for (int i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
 				if (!EEPROMStorage::isMacAddressExists(i)) {
@@ -111,10 +110,6 @@ void EEPROMStorage::initStorage(byte userAmount, byte macAmount, const byte woLD
 
 void EEPROMStorage::formatStorage() {
 	for (int i = 0; i < 8 * 1024; i++) EEPROM.write(i, 255);
-}
-
-byte EEPROMStorage::readRawStorage(int address) {
-	return EEPROM.read(address);
 }
 
 byte EEPROMStorage::getUsersAmount() {
@@ -191,14 +186,19 @@ EEPROMStorage::UserPermissions EEPROMStorage::getUserPermissions(byte userId) {
 	return static_cast<EEPROMStorage::UserPermissions>(EEPROM.read((userId + 1) * sizeof(EEPROMStorage::User)));
 }
 
-bool EEPROMStorage::pushUser(const EEPROMStorage::User& user) {
-	for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
-		if (EEPROM.read(sizeof(byte) + (i * sizeof(EEPROMStorage::User))) == '\0') {
-			EEPROM.put(sizeof(byte) + (i * sizeof(EEPROMStorage::User)), user);
-			return true;
+bool EEPROMStorage::pushUser(const EEPROMStorage::User& user, int slot) {
+	if (slot == -1) {	
+		for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
+			if (EEPROM.read(sizeof(byte) + (i * sizeof(EEPROMStorage::User))) == '\0') {
+				EEPROM.put(sizeof(byte) + (i * sizeof(EEPROMStorage::User)), user);
+				return true;
+			}
 		}
+		return false;
+	} else {
+		EEPROM.put(sizeof(byte) + (slot * sizeof(EEPROMStorage::User)), user);
+		return true;
 	}
-	return false;
 }
 
 bool EEPROMStorage::removeUser(byte id) {

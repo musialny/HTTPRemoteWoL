@@ -94,16 +94,6 @@ String* Utilities::decodeBASE64(const String& value, size_t inputShrink) {
 	return result;
 }
 
-bool Utilities::compareFixedSizeArray(const String& value, const char fixedSizeArray[], size_t arraySize) {
-	if (value.length() <= arraySize) {
-		for (int i = 0; i < arraySize; i++) {
-			if (value.charAt(i) != fixedSizeArray[i])
-				return false;
-		}
-	} else return false;
-	return true;
-}
-
 int Utilities::calculateBitFieldsAllocation(int bits) {
 	float result = static_cast<float>(bits) / 8;
 	if (result > static_cast<int>(result)) result++;

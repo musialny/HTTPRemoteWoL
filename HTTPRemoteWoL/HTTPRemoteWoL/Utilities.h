@@ -24,7 +24,16 @@ namespace Utilities {
 	SplittedString* split(const String& value, const String& splitter);
 	// SplittedString* split(const String& value, int maxArraySize);
 	String* decodeBASE64(const String& value, size_t inputShrink = 0);
-	bool compareFixedSizeArray(const String& value, const char fixedSizeArray[], size_t arraySize);
+	template<int SIZE>
+	bool compareFixedSizeArray(const String& value, const char fixedSizeArray[]) {
+		if (value.length() <= SIZE) {
+			for (int i = 0; i < SIZE; i++) {
+				if (value.charAt(i) != fixedSizeArray[i])
+				return false;
+			}
+		} else return false;
+		return true;
+	}
 	int calculateBitFieldsAllocation(int bits);
 	bool checkUserPerms(const byte perms[], int userId);
 	void setUserPerms(byte perms[], int userId, bool value = true);
