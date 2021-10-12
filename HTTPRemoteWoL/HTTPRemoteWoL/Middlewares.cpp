@@ -313,7 +313,7 @@ HttpMiddleware* Middlewares::user() {
 					auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
 					*resultBody += FlashStorage<char>(PSTR("<h3>Password Updated</h3><h4>User ID: "))();
 					*resultBody += String(id);
-					*resultBody += FlashStorage<char>(PSTR("</h4><a href=\"/\">Back</a>"))();
+					*resultBody += FlashStorage<char>(PSTR("</h4><a href=\"/users\">Back</a>"))();
 					*resultBody += FlashStorage<char>::getString(HTML_END);
 					return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
 			} else {

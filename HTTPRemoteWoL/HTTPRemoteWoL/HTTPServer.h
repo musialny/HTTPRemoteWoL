@@ -11,6 +11,7 @@
 #include <SPI.h>
 #include <Ethernet.h>
 #include "ElasticArray.h"
+#include "FlashStorage.h"
 
 enum class HTTPMethods {
 	ALL = -1,
@@ -74,6 +75,7 @@ public:
 	~HTTPSendResponse() = default;
 	
 	void push(HTTPResponse* response, String* body = nullptr);
+	EthernetClient& getClient();
 };
 
 class HTTPServer {
@@ -81,12 +83,115 @@ private:
 	ElasticArray<const HttpMiddleware*>* middlewares;
 	EthernetServer* server;
 	
+	Metadata* parseMetadata(const String& requestLine);
+	void parseHeaders(HTTPHeaders* headers, const String& requestLine);
+	void processRequest(HTTPSendResponse& send, Metadata* metadata, HTTPHeaders* headers, String* body);
+	
 public:
 	HTTPServer(const byte deviceMacAddress[6], const IPAddress& ip, bool useDHCP = true, int port = 80, int STATUS_PIN = 9);
 	~HTTPServer();
 	
 	HTTPServer& use(const HttpMiddleware* middleware);
-	void listen();
+	template<int URI_MAX_SIZE, int HEADER_MAX_SIZE, int BODY_MAX_SIZE>
+	void listen() {
+		Ethernet.maintain();
+		auto client = server->available();
+		if (client) {
+			HTTPSendResponse send(client);
+			auto rawRequestLine = new String;
+			int parsingStage = 0;
+			Metadata* metadata = nullptr;
+			HTTPHeaders* headers = new HTTPHeaders;
+			headers->ip = client.remoteIP();
+			while (client.connected()) {
+				if (client.available()) {
+					char c = client.read();
+					if (c == '\n' && parsingStage < 2) {
+						switch(parsingStage) {
+							case 0:
+								metadata = parseMetadata(*rawRequestLine);
+								if (metadata->method == HTTPMethods::ALL) {
+									delete metadata;
+									delete headers;
+									delete rawRequestLine;
+									HTTPResponse* response = new HTTPResponse {405, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 405 }"))())};
+									send.push(response);
+									client.println();
+									delete response;
+									delay(1);
+									client.stop();
+									return;
+								}
+								*rawRequestLine = "";
+								parsingStage = 1;
+							break;
+							
+							case 1:
+								if (rawRequestLine->length() == 1 && rawRequestLine->charAt(0) == '\r') {
+									parsingStage = 2;
+									*rawRequestLine = "";
+								}
+								else {
+									parseHeaders(headers, *rawRequestLine);
+									*rawRequestLine = "";
+								}
+							break;
+						}
+					} else if (c != '\0') {
+						if (!rawRequestLine->length() && c == '\r')
+							*rawRequestLine += c;
+						if (c != '\r')
+							*rawRequestLine += c;
+						if (parsingStage == 0) {
+							if (rawRequestLine->length() > URI_MAX_SIZE) {
+								delete metadata;
+								delete headers;
+								delete rawRequestLine;
+								HTTPResponse* response = new HTTPResponse {414, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 414 }"))())};
+								send.push(response);
+								client.println();
+								delete response;
+								delay(1);
+								client.stop();
+								return;
+							}
+						} else if (parsingStage == 1) {
+							if (rawRequestLine->length() > HEADER_MAX_SIZE) {
+								delete metadata;
+								delete headers;
+								delete rawRequestLine;
+								HTTPResponse* response = new HTTPResponse {431, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 431 }"))())};
+								send.push(response);
+								client.println();
+								delete response;
+								delay(1);
+								client.stop();
+								return;
+							}
+						} else {
+							if (rawRequestLine->length() > BODY_MAX_SIZE) {
+								delete metadata;
+								delete headers;
+								delete rawRequestLine;
+								HTTPResponse* response = new HTTPResponse {413, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 413 }"))())};
+								send.push(response);
+								client.println();
+								delete response;
+								delay(1);
+								client.stop();
+								return;
+							}
+						}
+					}
+				} else {
+					processRequest(send, metadata, headers, rawRequestLine);
+					break;
+				}
+			}
+			delay(1);
+			client.stop();
+		}
+	}
 };
 
 #endif /* HTTPSERVER_H_ */

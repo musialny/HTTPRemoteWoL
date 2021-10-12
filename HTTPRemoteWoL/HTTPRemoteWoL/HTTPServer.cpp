@@ -7,7 +7,6 @@
 
 #include "HTTPServer.h"
 #include "Utilities.h"
-#include "FlashStorage.h"
 
 HTTPRequest::HTTPRequest(String* url, String* urlParams, HTTPMethods method, HTTPHeaders* headers, String* body, void* data,  HTTPSendResponse* send, bool deleteBody) :
 	url(url), urlParams(urlParams), method(method), headers(headers), body(body), data(data), send(send), deleteBody(deleteBody) {}
@@ -36,7 +35,7 @@ HTTPResponse::~HTTPResponse() {
 HTTPSendResponse::HTTPSendResponse(EthernetClient& client) : client(client) {
 	this->isBegin = false;
 }
-	
+
 void HTTPSendResponse::push(HTTPResponse* response, String* body) {
 	if (response != nullptr) {
 		if (!isBegin) {
@@ -50,6 +49,10 @@ void HTTPSendResponse::push(HTTPResponse* response, String* body) {
 		}
 		client.print(*response->body);
 	} else if (body != nullptr) client.print(*body);
+}
+
+EthernetClient& HTTPSendResponse::getClient() {
+	return this->client;
 }
 
 HTTPServer::HTTPServer(const byte deviceMacAddress[], const IPAddress& ip, bool useDHCP, int port, int STATUS_PIN) {
@@ -88,12 +91,13 @@ HTTPServer& HTTPServer::use(const HttpMiddleware* middleware) {
 	return *this;
 }
 
-Metadata* parseMetadata(const String& requestLine) {
+Metadata* HTTPServer::parseMetadata(const String& requestLine) {
 	auto split = Utilities::split(requestLine, " ");
 	auto result = new Metadata;
 	if (split->strings[0] == String("GET")) result->method = HTTPMethods::GET;
 	else if (split->strings[0] == String("POST")) result->method = HTTPMethods::POST;
 	else if (split->strings[0] == String("DELETE")) result->method = HTTPMethods::DELETE;
+	else result->method = HTTPMethods::ALL;
 	auto url = Utilities::split(split->strings[1], "?");
 	if (url->amount) {
 		result->url = url->strings[0];
@@ -105,7 +109,7 @@ Metadata* parseMetadata(const String& requestLine) {
 	return result;
 }
 
-void parseHeaders(HTTPHeaders* headers, const String& requestLine) {
+void HTTPServer::parseHeaders(HTTPHeaders* headers, const String& requestLine) {
 	constexpr int _headers = (sizeof(HTTPHeaders) - sizeof(IPAddress)) / sizeof(String);
 	const String keys[_headers][2] = {{FlashStorage<char>(PSTR("Host: "))(), FlashStorage<char>(PSTR("host: "))()},
 									  {FlashStorage<char>(PSTR("Content-Type: "))(), FlashStorage<char>(PSTR("content-type: "))()},
@@ -125,63 +129,25 @@ void parseHeaders(HTTPHeaders* headers, const String& requestLine) {
 	}
 }
 
-void HTTPServer::listen() {
-	Ethernet.maintain();
-	auto client = server->available();
-	if (client) {
-		HTTPSendResponse send(client);
-		auto rawRequestLine = new String;
-		int parsingStage = 0;
-		Metadata* metadata = nullptr;
-		HTTPHeaders* headers = new HTTPHeaders;
-		headers->ip = client.remoteIP();
-		String* body = nullptr;
-		while (client.connected()) {
-			if (client.available()) {
-				char c = client.read();
-				if (c == '\n' && parsingStage < 2) {
-					switch(parsingStage) {
-						case 0:
-							metadata = parseMetadata(*rawRequestLine);
-							*rawRequestLine = "";
-							parsingStage = 1;
-						break;
-						
-						case 1:
-							if (rawRequestLine->length() == 1) parsingStage = 2;
-							else {
-								parseHeaders(headers, *rawRequestLine);
-								*rawRequestLine = "";
-							}
-						break;
-					}
-				} else if (c != '\r' && c != '\0') *rawRequestLine += c;
-			} else {
-				body = rawRequestLine;
-				HTTPRequest request(&metadata->url, &metadata->urlParams, metadata->method, headers, body, nullptr, &send, false);
-				HTTPResponse* response = nullptr;
-				for (int i = 0; i < this->middlewares->length(); i++) {
-					if ((*this->middlewares)[i]->method == metadata->method || (*this->middlewares)[i]->method == HTTPMethods::ALL) {
-						if ((*this->middlewares)[i]->url == metadata->url || (*this->middlewares)[i]->url == String("*")) {
-							response = (*this->middlewares)[i]->middleware(request);
-							if (response == nullptr) continue;
-							else break;
-						}
-					}
-				}
-				delete request.data;
-				delete metadata;
-				delete headers;
-				delete body;
-				if (response == nullptr) response = new HTTPResponse {500, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 500 }"))())};
-				if (response->body == nullptr) send.push(nullptr, nullptr);
-				else send.push(response);
-				client.println();
-				delete response;
-				break;
+void HTTPServer::processRequest(HTTPSendResponse& send, Metadata* metadata, HTTPHeaders* headers, String* body) {
+	HTTPRequest request(&metadata->url, &metadata->urlParams, metadata->method, headers, body, nullptr, &send, false);
+	HTTPResponse* response = nullptr;
+	for (int i = 0; i < this->middlewares->length(); i++) {
+		if ((*this->middlewares)[i]->method == metadata->method || (*this->middlewares)[i]->method == HTTPMethods::ALL) {
+			if ((*this->middlewares)[i]->url == metadata->url || (*this->middlewares)[i]->url == String("*")) {
+				response = (*this->middlewares)[i]->middleware(request);
+				if (response == nullptr) continue;
+				else break;
 			}
 		}
-		delay(1);
-		client.stop();
 	}
+	delete request.data;
+	delete metadata;
+	delete headers;
+	delete body;
+	if (response == nullptr) response = new HTTPResponse {500, new String[1] {FlashStorage<char>(PSTR("Content-Type: application/json"))()}, 1, new String(FlashStorage<char>(PSTR("{ \"Error\": 500 }"))())};
+	if (response->body == nullptr) send.push(nullptr, nullptr);
+	else send.push(response);
+	send.getClient().println();
+	delete response;
 }
