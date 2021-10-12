@@ -109,7 +109,7 @@ void EEPROMStorage::initStorage(byte userAmount, byte macAmount, const byte woLD
 }
 
 void EEPROMStorage::formatStorage() {
-	for (int i = 0; i < 8 * 1024; i++) EEPROM.write(i, 255);
+	for (int i = 0; i < 4096; i++) EEPROM.write(i, 255);
 }
 
 byte EEPROMStorage::getUsersAmount() {
