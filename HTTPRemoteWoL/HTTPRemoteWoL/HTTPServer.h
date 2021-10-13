@@ -140,7 +140,7 @@ public:
 					} else if (c != '\0') {
 						if (!rawRequestLine->length() && c == '\r')
 							*rawRequestLine += c;
-						if (c != '\r')
+						else if (c != '\r')
 							*rawRequestLine += c;
 						if (parsingStage == 0) {
 							if (rawRequestLine->length() > URI_MAX_SIZE) {

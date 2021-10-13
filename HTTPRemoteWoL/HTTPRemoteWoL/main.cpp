@@ -41,5 +41,3 @@ void setup() {
 void loop() {
 	httpServer->listen<512, 512, 512>();
 }
-
-// TODO: Valid HTTP response code names

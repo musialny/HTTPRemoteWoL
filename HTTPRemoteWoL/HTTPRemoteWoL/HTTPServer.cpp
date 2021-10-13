@@ -36,10 +36,34 @@ HTTPSendResponse::HTTPSendResponse(EthernetClient& client) : client(client) {
 	this->isBegin = false;
 }
 
+String* resolveStatusCode(int statusCode) {
+	if (statusCode == 200)
+		return new String(FlashStorage<char>(PSTR("200 OK"))());
+	else if (statusCode == 401)
+		return new String(FlashStorage<char>(PSTR("401 Unauthorized"))());
+	else if (statusCode == 403)
+		return new String(FlashStorage<char>(PSTR("403 Forbidden"))());
+	else if (statusCode == 404)
+		return new String(FlashStorage<char>(PSTR("404 Not Found"))());
+	else if (statusCode == 406)
+		return new String(FlashStorage<char>(PSTR("406 Not Acceptable"))());
+	else if (statusCode == 405)
+		return new String(FlashStorage<char>(PSTR("405 Method Not Allowed"))());
+	else if (statusCode == 414)
+		return new String(FlashStorage<char>(PSTR("414 URI Too Long"))());
+	else if (statusCode == 431)
+		return new String(FlashStorage<char>(PSTR("431 Request Header Fields Too Large"))());
+	else if (statusCode == 413)
+		return new String(FlashStorage<char>(PSTR("413 Payload Too Large"))());
+	else return new String(FlashStorage<char>(PSTR("500 Internal Server Error"))());
+}
+
 void HTTPSendResponse::push(HTTPResponse* response, String* body) {
 	if (response != nullptr) {
 		if (!isBegin) {
-			client.println("HTTP/1.1 " + String(response->statusCode) + " OK");
+			auto statusCode = resolveStatusCode(response->statusCode);
+			client.println("HTTP/1.1 " + *statusCode);
+			delete statusCode;
 			for (int i = 0; i < response->headersCount; i++)
 				client.println(response->headers[i]);
 			client.println(FlashStorage<char>(PSTR("X-Powered-By: musialny.dev"))());
