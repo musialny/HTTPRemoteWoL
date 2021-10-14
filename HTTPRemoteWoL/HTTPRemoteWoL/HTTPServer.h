@@ -138,10 +138,9 @@ public:
 							break;
 						}
 					} else if (c != '\0') {
-						if (!rawRequestLine->length() && c == '\r')
+						if (c != '\r')
 							*rawRequestLine += c;
-						else if (c != '\r')
-							*rawRequestLine += c;
+						else if (!rawRequestLine->length()) *rawRequestLine += c;
 						if (parsingStage == 0) {
 							if (rawRequestLine->length() > URI_MAX_SIZE) {
 								delete metadata;
