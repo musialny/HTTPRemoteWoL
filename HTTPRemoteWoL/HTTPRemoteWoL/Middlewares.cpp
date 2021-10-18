@@ -48,7 +48,9 @@ HttpMiddleware* Middlewares::auth() {
 					}	
 				}
 				delete credentials;
-				return new HTTPResponse({403, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN)}, 1, new String(FlashStorage<char>::getString(FORBIDDEN))});
+				return new HTTPResponse({401, new String[2] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_PLAIN),
+															 FlashStorage<char>(PSTR("WWW-Authenticate: Basic realm=\"Authorization needed\", encoding=\"ASCII\""))()}, 2,
+															 new String(FlashStorage<char>::getString(FORBIDDEN))});
 			}
 			delete autho;
 			return new HTTPResponse({406, new String[2] {FlashStorage<char>(PSTR("WWW-Authenticate: Basic realm=\"Authorization needed\""))(),
@@ -90,7 +92,7 @@ HttpMiddleware* Middlewares::homePage() {
 			for (byte i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
 				String username;
 				auto user = EEPROMStorage::getUserCredentials(i);
-				if (user == nullptr) continue;
+				if (user == nullptr || i == reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id) continue;
 				for (byte o = 0; o < sizeof(user->username); o++) {
 					if (user->username[o] == '\0') break;
 					username += user->username[o];
@@ -447,6 +449,7 @@ HttpMiddleware* Middlewares::wol() {
 					}
 					delete splitPerms;
 					if (perm) {
+						EEPROMStorage::removeNearestMacAddress(id);
 						auto macId = mac->saveToEEPROM(id);
 						delete mac;
 						auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
