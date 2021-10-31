@@ -42,7 +42,7 @@ namespace EEPROMStorage {
 
 		Mac(const byte address[6], const char name[12], const byte* permissions);
 		~Mac();
-		int saveToEEPROM(int slot = -1);
+		int saveToEEPROM(int slot = -1, bool bumpCounter = true);
 	};
 	
 	void initStorage(byte userAmount, byte macAmount, const byte woLDefaultAddressList[][6], FlashStorage<char> woLDefaultAddressNames[], int woLDefaultAddressListAmount);
@@ -50,6 +50,7 @@ namespace EEPROMStorage {
 	byte getUsersAmount();
 	byte getMacAddressesAmount();
 	bool isMacAddressExists(byte id);
+	byte getNearestMacAddressId(byte id);
 	void removeNearestMacAddress(byte id);
 	EEPROMStorage::Mac* getNearestMacAddress(byte id);
 	EEPROMStorage::Mac* getMacAddress(byte id);

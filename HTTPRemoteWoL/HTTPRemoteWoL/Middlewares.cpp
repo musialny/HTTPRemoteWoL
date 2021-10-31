@@ -449,8 +449,7 @@ HttpMiddleware* Middlewares::wol() {
 					}
 					delete splitPerms;
 					if (perm) {
-						EEPROMStorage::removeNearestMacAddress(id);
-						auto macId = mac->saveToEEPROM(id);
+						auto macId = mac->saveToEEPROM(id, false);
 						delete mac;
 						auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
 						*resultBody += FlashStorage<char>(PSTR("<h3>Mac Address Permissions Updated</h3><h4>ID: "))();

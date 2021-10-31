@@ -48,12 +48,12 @@ EEPROMStorage::Mac::~Mac() {
 	delete[] this->permissions;
 }
 
-int EEPROMStorage::Mac::saveToEEPROM(int slot) {
+int EEPROMStorage::Mac::saveToEEPROM(int slot, bool bumpCounter) {
 	if (EEPROMStorage::getMacAddressesAmount() < EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE)) {
-		auto save = [](int i, byte* data, int permissionsSize) -> void {
+		auto save = [&bumpCounter](int i, byte* data, int permissionsSize) -> void {
 			for (byte o = 0; o < sizeof(EEPROMStorage::Mac::address) + sizeof(EEPROMStorage::Mac::name) + permissionsSize; o++)
 				EEPROM.write(MAC_DATA_TABLE_DATA_BEGIN(i) + o, data[o]);
-			EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, EEPROMStorage::getMacAddressesAmount() + 1);
+			if (bumpCounter) EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, EEPROMStorage::getMacAddressesAmount() + 1);
 		};
 		byte* data = reinterpret_cast<byte*>(malloc(sizeof(EEPROMStorage::Mac::address) + sizeof(EEPROMStorage::Mac::name) + this->permissionsSize));
 		for (byte i = 0; i < this->permissionsSize; i++)
@@ -131,9 +131,20 @@ bool EEPROMStorage::isMacAddressExists(byte id) {
 	else return true;
 }
 
+byte EEPROMStorage::getNearestMacAddressId(byte id) {
+	int offset = 0;
+	for (int i = 0; i < id; i++) if (!EEPROMStorage::isMacAddressExists(i)) offset++;
+	Serial.println("ID: " + String(id) + " | Offset: " + String(offset));
+	/*for (int i = id; i < EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE); i++) {
+		if (EEPROMStorage::isMacAddressExists(id + offset)) break;
+		id++;
+		if (i == EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE) - 1) return nullptr;
+	}*/
+}
+
 void EEPROMStorage::removeNearestMacAddress(byte id) {
 	if (EEPROMStorage::getMacAddressesAmount()) {
-		for (int i = 0; i < EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE); i++) {
+		for (int i = id; i < EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE); i++) {
 			if (EEPROMStorage::isMacAddressExists(id)) break;
 			id++;
 			if (i == EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE) - 1) return;
@@ -147,11 +158,8 @@ void EEPROMStorage::removeNearestMacAddress(byte id) {
 }
 
 EEPROMStorage::Mac* EEPROMStorage::getNearestMacAddress(byte id) {
-	for (int i = 0; i < EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE); i++) {
-		if (EEPROMStorage::isMacAddressExists(id)) break;
-		id++;
-		if (i == EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE) - 1) return nullptr;
-	}
+	if (id >= EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE)) return nullptr;
+	EEPROMStorage::getNearestMacAddressId(id);
 	return EEPROMStorage::getMacAddress(id);
 }
 

@@ -20,10 +20,9 @@ Utilities::SplittedString::~SplittedString() {
 ElasticArray<int>* Utilities::findAll(const String& value, const String& findingValue) {
 	auto result = new ElasticArray<int>;
 	for (int i = 0; i < value.length(); i++) {
-		int subIndex = i;
 		bool isEqual = true;
 		for (int o = 0; o < findingValue.length(); o++) {
-			if (value.charAt(subIndex++) != findingValue.charAt(o)) {
+			if (value.charAt(i + o) != findingValue.charAt(o)) {
 				isEqual = false;
 				break;
 			}
