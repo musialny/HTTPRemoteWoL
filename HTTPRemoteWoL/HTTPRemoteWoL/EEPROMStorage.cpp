@@ -131,36 +131,14 @@ bool EEPROMStorage::isMacAddressExists(byte id) {
 	else return true;
 }
 
-byte EEPROMStorage::getNearestMacAddressId(byte id) {
-	int offset = 0;
-	for (int i = 0; i < id; i++) if (!EEPROMStorage::isMacAddressExists(i)) offset++;
-	Serial.println("ID: " + String(id) + " | Offset: " + String(offset));
-	/*for (int i = id; i < EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE); i++) {
-		if (EEPROMStorage::isMacAddressExists(id + offset)) break;
-		id++;
-		if (i == EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE) - 1) return nullptr;
-	}*/
-}
-
-void EEPROMStorage::removeNearestMacAddress(byte id) {
+void EEPROMStorage::removeMacAddress(byte id) {
 	if (EEPROMStorage::getMacAddressesAmount()) {
-		for (int i = id; i < EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE); i++) {
-			if (EEPROMStorage::isMacAddressExists(id)) break;
-			id++;
-			if (i == EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE) - 1) return;
-		}
 		int address = MAC_DATA_TABLE_DATA_BEGIN(id);
 		for (byte i = 0; i < Utilities::calculateBitFieldsAllocation(EEPROMStorage::getUsersAmount()); i++)
 			EEPROM.write(address + i, 0);
 		byte buffer = EEPROMStorage::getMacAddressesAmount();
 		EEPROM.write(MAC_DATA_TABLE_AMOUNT_BEGIN, !buffer ? 0 : buffer - 1);
 	}
-}
-
-EEPROMStorage::Mac* EEPROMStorage::getNearestMacAddress(byte id) {
-	if (id >= EEPROM.read(MAC_DATA_TABLE_ALLOCATION_SIZE)) return nullptr;
-	EEPROMStorage::getNearestMacAddressId(id);
-	return EEPROMStorage::getMacAddress(id);
 }
 
 EEPROMStorage::Mac* EEPROMStorage::getMacAddress(byte id) {

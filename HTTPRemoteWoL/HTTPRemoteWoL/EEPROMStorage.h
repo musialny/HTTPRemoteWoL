@@ -50,8 +50,7 @@ namespace EEPROMStorage {
 	byte getUsersAmount();
 	byte getMacAddressesAmount();
 	bool isMacAddressExists(byte id);
-	byte getNearestMacAddressId(byte id);
-	void removeNearestMacAddress(byte id);
+	void removeMacAddress(byte id);
 	EEPROMStorage::Mac* getNearestMacAddress(byte id);
 	EEPROMStorage::Mac* getMacAddress(byte id);
 	EEPROMStorage::User* getUserCredentials(byte userId);

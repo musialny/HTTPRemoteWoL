@@ -117,7 +117,7 @@ HttpMiddleware* Middlewares::homePage() {
 		}
 		*resultBody += FlashStorage<char>(PSTR("<br>"))();
 		for (int i = 0; i < EEPROMStorage::getMacAddressesAmount(); i++) {
-			auto mac = EEPROMStorage::getNearestMacAddress(i);
+			auto mac = EEPROMStorage::getMacAddress(i);
 			if (mac != nullptr && ((*request.urlParams == FlashStorage<char>(PSTR("showAll=true"))() &&
 									reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN) ||
 									Utilities::checkUserPerms(mac->permissions, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id))) {
@@ -414,7 +414,7 @@ HttpMiddleware* Middlewares::wol() {
 				byte id = atoi(parsedParam->strings[1].c_str());
 				delete parsedParam;
 				if (param2 == FlashStorage<char>(PSTR("delete=Delete"))() && reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN) {
-					EEPROMStorage::removeNearestMacAddress(id);
+					EEPROMStorage::removeMacAddress(id);
 					auto resultBody = new String(FlashStorage<char>::getString(HTML_BEGIN));
 					*resultBody += FlashStorage<char>(PSTR("<h3>Mac Address Removed</h3><h4>ID: "))();
 					*resultBody += String(id);
@@ -422,7 +422,7 @@ HttpMiddleware* Middlewares::wol() {
 					*resultBody += FlashStorage<char>::getString(HTML_END);
 					return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
 				} else if (param2 == FlashStorage<char>(PSTR("invoke=Invoke"))()) {
-					auto mac = EEPROMStorage::getNearestMacAddress(id);
+					auto mac = EEPROMStorage::getMacAddress(id);
 					if (mac != nullptr && Utilities::checkUserPerms(mac->permissions, reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->id))
 						WoL::sendMagicPacket(*wolHandler, mac->address);
 					else {
@@ -435,7 +435,7 @@ HttpMiddleware* Middlewares::wol() {
 					*resultBody += FlashStorage<char>::getString(HTML_END);
 					return new HTTPResponse {200, new String[1] {FlashStorage<char>::getString(CONTENT_TYPE::TEXT_HTML)}, 1, resultBody};
 				} else if (param2 == FlashStorage<char>(PSTR("updatePerms=Update+Perms"))() && reinterpret_cast<EEPROMStorage::UserMetadata*>(request.data)->permissions == EEPROMStorage::UserPermissions::ADMIN) {
-					auto mac = EEPROMStorage::getNearestMacAddress(id);
+					auto mac = EEPROMStorage::getMacAddress(id);
 					auto splitPerms = Utilities::split(perms, "%7C");
 					if (mac == nullptr || splitPerms->amount != mac->permissionsSize) {
 						delete splitPerms;

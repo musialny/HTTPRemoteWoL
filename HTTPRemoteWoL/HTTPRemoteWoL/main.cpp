@@ -19,42 +19,7 @@ constexpr int STATUS_PIN = 9;
 WoL::WoLHandler* wolHandler;
 HTTPServer* httpServer;
 
-void setup() {
-	Serial.begin(9600);
-	Serial.println(FlashStorage<char>(PSTR("[ Serial Inited ]"))());
-	for (int i = 0; i < 4 * 1024; i++) {
-		char result = EEPROM.read(i);
-		// if (result != 255)
-			Serial.print(String(static_cast<byte>(result)) + "|");
-	}
-	Serial.println();
-	for (int i = 0; i < 4 * 1024; i++) {
-		char result = EEPROM.read(i);
-		if (result != 255)
-			Serial.print(String(result) + [&result]() -> String {
-				String returnable;
-				if (result == 0) return " ";
-				else if (result == 10 || result == 255) return "  ";
-				else for (int i = 0; i < String(static_cast<byte>(result)).length() - 1; i++) returnable += " ";
-				return returnable;
-			}() + "|");
-	}
-	Serial.println();
-	for (int i = 0; i < EEPROMStorage::getUsersAmount(); i++) {
-		auto user = EEPROMStorage::getUserCredentials(i);
-		if (user == nullptr) continue;
-		Serial.print(FlashStorage<char>(PSTR("user->username = "))() + String(user->username));
-		Serial.print(FlashStorage<char>(PSTR(" | user->password = "))() + String(user->password));
-		Serial.print(FlashStorage<char>(PSTR(" | user->permissions = "))() + String(static_cast<byte>(user->permissions)));
-		Serial.println();
-		delete user;
-	}
-	
-	Serial.println("------Is exists------");
-	for (int i = 0; i < 150; i++)
-		Serial.println(String(i) + " | " + String(EEPROMStorage::isMacAddressExists(i)));
-	Serial.println("---------------------");
-	
+void setup() {	
 	/*constexpr const int woLDefaultAddressListAmount = 1;
 	constexpr const byte woLDefaultAddressList[woLDefaultAddressListAmount][6] = {{ 0x18, 0xC0, 0x4D, 0x85, 0x10, 0x2F }};
 	FlashStorage<char> woLDefaultAddressListNames[woLDefaultAddressListAmount] = {woLDefaultAddressNames::PC};*/
@@ -63,7 +28,7 @@ void setup() {
 	pinMode(FACTORY_RESET_PIN, INPUT);
 	if (digitalRead(FACTORY_RESET_PIN)) EEPROMStorage::formatStorage();
 	
-	EEPROMStorage::initStorage(20, 150, nullptr, nullptr, 0/*woLDefaultAddressList, woLDefaultAddressListNames, woLDefaultAddressListAmount*/);
+	EEPROMStorage::initStorage(20, 173, nullptr, nullptr, 0/*woLDefaultAddressList, woLDefaultAddressListNames, woLDefaultAddressListAmount*/);
 	httpServer = new HTTPServer(deviceMac, IPAddress(10, 10, 0, 10), true, 80, STATUS_PIN);
 	httpServer->use(Middlewares::auth())
 		.use(Middlewares::homePage())
